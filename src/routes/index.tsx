@@ -1,10 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { createFileRoute } from "@tanstack/react-router";
 import OnboardingHeader from "@/components/OnboardingHeader";
-
-const FORM_EMBED_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSedo_EdleV9-SOkeVhG6tWeEpAWDzFc_Pg4V_0SuZdJMOAsvQ/viewform?embedded=true";
+import IntakeForm from "@/components/IntakeForm";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -42,23 +38,7 @@ function Step1() {
           </p>
         </div>
 
-        <div className="mt-8 overflow-hidden rounded-xl border bg-card">
-          <iframe
-            src={FORM_EMBED_URL}
-            title="Client intake form"
-            loading="lazy"
-            className="h-[2400px] w-full"
-          />
-        </div>
-
-        <div className="mt-8 flex justify-center">
-          <Button asChild variant="brand" size="lg" className="w-full sm:w-[320px]">
-            <Link to="/step-2">
-              Continue to Step 2
-              <ArrowRight />
-            </Link>
-          </Button>
-        </div>
+        <IntakeForm />
       </main>
     </div>
   );
