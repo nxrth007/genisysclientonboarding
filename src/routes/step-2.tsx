@@ -31,32 +31,32 @@ function Step2() {
       <OnboardingHeader current={2} />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12">
         <div className="space-y-3 text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-primary">Step 2 of 3</p>
-          <h1 className="text-3xl font-bold tracking-tight text-ink md:text-4xl">
+          <p className="text-sm text-primary">Step 2 of 3</p>
+          <h1 className="text-3xl font-medium tracking-tight text-ink md:text-4xl">
             Please book your launch call
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          <p className="mx-auto max-w-2xl text-lg font-normal text-muted-foreground">
             Pick a time starting 5 days from now so our team has time to build your system before we
             meet.
           </p>
         </div>
 
-        <div className="mt-8 overflow-hidden rounded-xl border bg-card shadow-card">
+        <div className="mt-8 overflow-hidden rounded-xl border bg-card">
           <iframe
             src={BOOKING_URL}
-            id="UNKaVSykfrG4sGyD5Bti_booking"
             title="Book your launch call"
-            className="h-[1060px] w-full border-0"
+            scrolling="no"
+            className="h-[1100px] w-full"
           />
         </div>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button asChild variant="outline" size="lg">
+          <Button asChild variant="outline" size="lg" className="w-full sm:w-[320px]">
             <Link to="/">Back to Step 1</Link>
           </Button>
-          <Button asChild size="xl" variant="brand">
+          <Button asChild variant="brand" size="lg" className="w-full sm:w-[320px]">
             <Link to="/step-3">
-              I've booked my call — Final Step
+              Continue to Final Step
               <ArrowRight />
             </Link>
           </Button>

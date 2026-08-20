@@ -13,7 +13,7 @@ export function OnboardingHeader({ current }: { current: 1 | 2 | 3 }) {
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-8">
         <Link to="/" className="flex flex-col items-center gap-3">
           <img src={logo} alt="Lead Genisys" className="h-16 w-auto object-contain" />
-          <span className="text-lg font-semibold tracking-tight text-ink md:text-xl">
+          <span className="text-lg font-medium tracking-tight text-ink md:text-xl">
             Client <span className="text-primary">Onboarding</span>
           </span>
         </Link>
@@ -28,7 +28,7 @@ export function OnboardingHeader({ current }: { current: 1 | 2 | 3 }) {
                 <div className="flex items-center gap-2">
                   <span
                     className={[
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium",
                       active
                         ? "bg-primary text-primary-foreground"
                         : done
