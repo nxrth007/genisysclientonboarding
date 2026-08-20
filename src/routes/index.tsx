@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ClipboardList, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import OnboardingHeader from "@/components/OnboardingHeader";
 
 const FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSedo_EdleV9-SOkeVhG6tWeEpAWDzFc_Pg4V_0SuZdJMOAsvQ/viewform";
+const EMBED_URL = `${FORM_URL}?embedded=true`;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -42,28 +43,30 @@ function Step1() {
           </p>
         </div>
 
-        <div className="shadow-card mx-auto mt-10 max-w-xl rounded-xl border bg-card p-8 text-center">
-          <span className="mx-auto flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <ClipboardList className="size-6" />
-          </span>
-          <h2 className="mt-4 text-xl font-semibold text-ink">Client Intake Form</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Takes about 10 minutes. Have your business details, targeting areas and brand assets handy
-            before you start.
-          </p>
-          <Button asChild size="xl" variant="brand" className="mt-6 w-full sm:w-auto">
-            <a href={FORM_URL} target="_blank" rel="noreferrer">
-              Open the intake form
-              <ExternalLink />
-            </a>
-          </Button>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Opens in a new tab — keep this page open so you can continue.
-          </p>
+        <div className="shadow-card mt-10 overflow-hidden rounded-xl border bg-card">
+          <iframe
+            src={EMBED_URL}
+            title="Client intake form"
+            className="h-[1400px] w-full"
+            loading="lazy"
+          />
         </div>
 
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          Trouble loading the form?{" "}
+          <a
+            href={FORM_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 font-medium text-primary underline underline-offset-4"
+          >
+            Open it in a new tab
+            <ExternalLink className="size-3" />
+          </a>
+        </p>
+
         <div className="mt-10 flex justify-center">
-          <Button asChild variant="outline" size="lg">
+          <Button asChild variant="brand" size="xl">
             <Link to="/step-2">
               I've submitted the form — continue to Step 2
               <ArrowRight />

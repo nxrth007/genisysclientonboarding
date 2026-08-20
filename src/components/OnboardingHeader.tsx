@@ -30,7 +30,7 @@ export function OnboardingHeader({ current }: { current: 1 | 2 | 3 }) {
                     className={[
                       "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
                       active
-                        ? "gradient-primary text-primary-foreground shadow-button"
+                        ? "bg-primary text-primary-foreground"
                         : done
                           ? "bg-primary/15 text-primary"
                           : "bg-muted text-muted-foreground",
