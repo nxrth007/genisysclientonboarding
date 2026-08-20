@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as Step2RouteImport } from './routes/step-2'
+import { Route as Step3RouteImport } from './routes/step-3'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +23,40 @@ const Step2Route = Step2RouteImport.update({
   path: '/step-2',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Step3Route = Step3RouteImport.update({
+  id: '/step-3',
+  path: '/step-3',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/step-2': typeof Step2Route
+  '/step-3': typeof Step3Route
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/step-2': typeof Step2Route
+  '/step-3': typeof Step3Route
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/step-2': typeof Step2Route
+  '/step-3': typeof Step3Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/step-2'
+  fullPaths: '/' | '/step-2' | '/step-3'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/step-2'
-  id: '__root__' | '/' | '/step-2'
+  to: '/' | '/step-2' | '/step-3'
+  id: '__root__' | '/' | '/step-2' | '/step-3'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   Step2Route: typeof Step2Route
+  Step3Route: typeof Step3Route
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Step2RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/step-3': {
+      id: '/step-3'
+      path: '/step-3'
+      fullPath: '/step-3'
+      preLoaderRoute: typeof Step3RouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   Step2Route: Step2Route,
+  Step3Route: Step3Route,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
