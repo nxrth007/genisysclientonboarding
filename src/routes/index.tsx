@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ClipboardList, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import OnboardingHeader from "@/components/OnboardingHeader";
 
