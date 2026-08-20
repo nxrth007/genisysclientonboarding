@@ -158,3 +158,19 @@
     color: var(--color-foreground);
   }
 }
+
+@utility gradient-primary {
+  background-image: var(--gradient-primary);
+}
+
+@utility gradient-hero {
+  background-image: var(--gradient-hero);
+}
+
+@utility shadow-button {
+  box-shadow: var(--shadow-button);
+}
+
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
+}
