@@ -46,7 +46,7 @@ function Step2() {
             src={BOOKING_URL}
             id="UNKaVSykfrG4sGyD5Bti_booking"
             title="Book your launch call"
-            className="h-[1250px] w-full border-0"
+            className="h-[1060px] w-full border-0"
           />
         </div>
 
