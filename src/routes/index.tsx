@@ -42,24 +42,30 @@ function Step1() {
           </p>
         </div>
 
-        <div className="mt-8 overflow-hidden rounded-xl border bg-card shadow-card">
-          <iframe
-            src={`${FORM_URL}?embedded=true`}
-            title="Client Intake Form"
-            className="h-[760px] w-full"
-          />
-        </div>
-
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button asChild variant="outline" size="lg">
+        <div className="shadow-card mx-auto mt-10 max-w-xl rounded-xl border bg-card p-8 text-center">
+          <span className="mx-auto flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <ClipboardList className="size-6" />
+          </span>
+          <h2 className="mt-4 text-xl font-semibold text-ink">Client Intake Form</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Takes about 10 minutes. Have your business details, targeting areas and brand assets handy
+            before you start.
+          </p>
+          <Button asChild size="xl" variant="brand" className="mt-6 w-full sm:w-auto">
             <a href={FORM_URL} target="_blank" rel="noreferrer">
-              Open form in new tab
+              Open the intake form
               <ExternalLink />
             </a>
           </Button>
-          <Button asChild size="lg" variant="brand">
+          <p className="mt-3 text-xs text-muted-foreground">
+            Opens in a new tab — keep this page open so you can continue.
+          </p>
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          <Button asChild variant="outline" size="lg">
             <Link to="/step-2">
-              I've submitted the form — Step 2
+              I've submitted the form — continue to Step 2
               <ArrowRight />
             </Link>
           </Button>
