@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CalendarClock } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import OnboardingHeader from "@/components/OnboardingHeader";
 
@@ -26,14 +26,6 @@ export const Route = createFileRoute("/step-2")({
 });
 
 function Step2() {
-  const target = new Date();
-  target.setDate(target.getDate() + 5);
-  const targetLabel = target.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-
   return (
     <div className="flex min-h-screen flex-col gradient-hero">
       <OnboardingHeader current={2} />
@@ -47,18 +39,14 @@ function Step2() {
             Pick a time starting 5 days from now so our team has time to build your system before we
             meet.
           </p>
-          <p className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
-            <CalendarClock className="size-4" />
-            Book on or after {targetLabel}
-          </p>
         </div>
 
         <div className="mt-8 overflow-hidden rounded-xl border bg-card shadow-card">
           <iframe
             src={BOOKING_URL}
+            id="UNKaVSykfrG4sGyD5Bti_booking"
             title="Book your launch call"
-            scrolling="no"
-            className="h-[820px] w-full"
+            className="h-[1250px] w-full border-0"
           />
         </div>
 
