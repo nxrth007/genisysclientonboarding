@@ -40,7 +40,11 @@ async function ensureHeaderRow() {
   const existing = (await sheetsFetch(`/values/${SHEET_NAME}!A1:Z1`, { method: "GET" })) as {
     values?: string[][];
   };
-  if (existing.values?.[0]?.length) return;
+  const current = existing.values?.[0] ?? [];
+  const matches =
+    SHEET_HEADERS.length === current.length &&
+    SHEET_HEADERS.every((header, index) => header === current[index]);
+  if (matches) return;
   await sheetsFetch(
     `/values/${SHEET_NAME}!A1?valueInputOption=RAW`,
     { method: "PUT", body: JSON.stringify({ values: [SHEET_HEADERS] }) },
