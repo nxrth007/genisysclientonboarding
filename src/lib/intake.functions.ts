@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { intakeSchema } from "./intake-validation";
-import { appendIntakeSubmission } from "./intake.server";
+import { recordIntakeSubmission } from "./intake.server";
 
 export const submitIntake = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => intakeSchema.parse(data))
-  .handler(async ({ data }) => appendIntakeSubmission(data));
+  .handler(async ({ data }) => recordIntakeSubmission(data));

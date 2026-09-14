@@ -69,10 +69,11 @@ async function signFiles(filePaths: string[]): Promise<string[]> {
   return urls;
 }
 
-export async function appendIntakeSubmission({ answers, filePaths }: IntakeSubmission) {
+export async function recordIntakeSubmission({ answers, filePaths }: IntakeSubmission) {
   await ensureHeaderRow();
   const submittedAt = new Date().toISOString();
   const fileUrls = await signFiles(filePaths);
+  const payload = buildIntakeWebhookPayload(answers, fileUrls, submittedAt);
   const row = [
     submittedAt,
     ...INTAKE_FIELDS.map((field) => answers[field.id] ?? ""),
@@ -82,6 +83,6 @@ export async function appendIntakeSubmission({ answers, filePaths }: IntakeSubmi
     `/values/${SHEET_NAME}!A1:Z1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
     { method: "POST", body: JSON.stringify({ values: [row] }) },
   );
-  await sendIntakeWebhooks(buildIntakeWebhookPayload(answers, fileUrls, submittedAt));
-  return { ok: true as const };
+  await sendIntakeWebhooks(payload);
+  return { ok: true as const, payload };
 }
