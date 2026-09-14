@@ -47,7 +47,7 @@ export const Route = createFileRoute("/api/public/intake-webhook")({
         // { fieldId: "value", ... } object.
         const raw = body as Record<string, unknown>;
         const candidate =
-          raw && typeof raw === "object" && raw.answers && typeof raw.answers === "object"
+          raw && typeof raw === "object" && raw["answers"] && typeof raw["answers"] === "object"
             ? raw
             : { answers: raw, filePaths: [] };
 
