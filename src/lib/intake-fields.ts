@@ -6,6 +6,12 @@ export type IntakeField = {
 };
 
 export const INTAKE_FIELDS: IntakeField[] = [
+  {
+    id: "ein",
+    label: "EIN (Employer Identification Number) — needed to send text messages to potential clients",
+    type: "text",
+    placeholder: "XX-XXXXXXX",
+  },
   { id: "fullName", label: "Full Name", type: "text" },
   { id: "businessName", label: "Business Name", type: "text" },
   { id: "businessContact", label: "Business Contact Information", type: "text" },
