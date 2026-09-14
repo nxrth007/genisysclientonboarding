@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as Step2RouteImport } from './routes/step-2'
 import { Route as Step3RouteImport } from './routes/step-3'
+import { Route as ApiPublicIntakeWebhookRouteImport } from './routes/api/public/intake-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const Step3Route = Step3RouteImport.update({
   path: '/step-3',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIntakeWebhookRoute = ApiPublicIntakeWebhookRouteImport.update({
+  id: '/api/public/intake-webhook',
+  path: '/api/public/intake-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/step-2': typeof Step2Route
   '/step-3': typeof Step3Route
+  '/api/public/intake-webhook': typeof ApiPublicIntakeWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/step-2': typeof Step2Route
   '/step-3': typeof Step3Route
+  '/api/public/intake-webhook': typeof ApiPublicIntakeWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/step-2': typeof Step2Route
   '/step-3': typeof Step3Route
+  '/api/public/intake-webhook': typeof ApiPublicIntakeWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/step-2' | '/step-3'
+  fullPaths: '/' | '/step-2' | '/step-3' | '/api/public/intake-webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/step-2' | '/step-3'
-  id: '__root__' | '/' | '/step-2' | '/step-3'
+  to: '/' | '/step-2' | '/step-3' | '/api/public/intake-webhook'
+  id: '__root__' | '/' | '/step-2' | '/step-3' | '/api/public/intake-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   Step2Route: typeof Step2Route
   Step3Route: typeof Step3Route
+  ApiPublicIntakeWebhookRoute: typeof ApiPublicIntakeWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Step3RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/intake-webhook': {
+      id: '/api/public/intake-webhook'
+      path: '/api/public/intake-webhook'
+      fullPath: '/api/public/intake-webhook'
+      preLoaderRoute: typeof ApiPublicIntakeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   Step2Route: Step2Route,
   Step3Route: Step3Route,
+  ApiPublicIntakeWebhookRoute: ApiPublicIntakeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
