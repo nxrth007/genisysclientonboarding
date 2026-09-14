@@ -1,4 +1,5 @@
 import { INTAKE_FIELDS, SHEET_HEADERS } from "./intake-fields";
+import { buildIntakeWebhookPayload, sendIntakeWebhooks } from "./intake-webhook.server";
 
 const SPREADSHEET_ID = "1NGkkUtVM0tf1J8G8ibCLQ0LIB9RK_EtnXgipHizYCIs";
 const SHEET_NAME = "Sheet1";
@@ -51,8 +52,8 @@ async function ensureHeaderRow() {
   );
 }
 
-async function signFiles(filePaths: string[]): Promise<string> {
-  if (filePaths.length === 0) return "";
+async function signFiles(filePaths: string[]): Promise<string[]> {
+  if (filePaths.length === 0) return [];
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const urls: string[] = [];
   for (const path of filePaths) {
@@ -65,19 +66,22 @@ async function signFiles(filePaths: string[]): Promise<string> {
     }
     if (data?.signedUrl) urls.push(data.signedUrl);
   }
-  return urls.join("\n");
+  return urls;
 }
 
 export async function appendIntakeSubmission({ answers, filePaths }: IntakeSubmission) {
   await ensureHeaderRow();
+  const submittedAt = new Date().toISOString();
+  const fileUrls = await signFiles(filePaths);
   const row = [
-    new Date().toISOString(),
+    submittedAt,
     ...INTAKE_FIELDS.map((field) => answers[field.id] ?? ""),
-    await signFiles(filePaths),
+    fileUrls.join("\n"),
   ];
   await sheetsFetch(
     `/values/${SHEET_NAME}!A1:Z1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
     { method: "POST", body: JSON.stringify({ values: [row] }) },
   );
+  await sendIntakeWebhooks(buildIntakeWebhookPayload(answers, fileUrls, submittedAt));
   return { ok: true as const };
 }
