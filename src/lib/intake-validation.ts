@@ -20,13 +20,35 @@ function fieldSchema(field: (typeof INTAKE_FIELDS)[number]) {
     .max(field.type === "textarea" ? 5000 : 500);
 }
 
-export const intakeSchema = z.object({
-  answers: z.object(
-    Object.fromEntries(
-      INTAKE_FIELDS.map((field) => [field.id, fieldSchema(field)]),
-    ) as Record<string, z.ZodType<string>>,
-  ),
-  filePaths: z.array(z.string().trim().min(1).max(500)).max(20),
-});
+const answersSchema = z.object(
+  Object.fromEntries(
+    INTAKE_FIELDS.map((field) => [
+      field.id,
+      field.requiredWhen
+        ? z.string().trim().max(500)
+        : fieldSchema(field),
+    ]),
+  ) as Record<string, z.ZodType<string>>,
+);
+
+export const intakeSchema = z
+  .object({
+    answers: answersSchema,
+    filePaths: z.array(z.string().trim().min(1).max(500)).max(20),
+  })
+  .superRefine((data, ctx) => {
+    for (const field of INTAKE_FIELDS) {
+      if (!field.requiredWhen) continue;
+      const trigger = data.answers[field.requiredWhen.field];
+      const value = data.answers[field.id];
+      if (trigger === field.requiredWhen.equals && !value) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["answers", field.id],
+          message: "This field is required",
+        });
+      }
+    }
+  });
 
 export type IntakeInput = z.infer<typeof intakeSchema>;
