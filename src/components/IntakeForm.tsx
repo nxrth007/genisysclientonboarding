@@ -69,6 +69,12 @@ export default function IntakeForm() {
   }
 
   function renderTextField(field: IntakeField) {
+    if (
+      field.requiredWhen &&
+      answers[field.requiredWhen.field] !== field.requiredWhen.equals
+    ) {
+      return null;
+    }
     return (
       <div key={field.id} className="rounded-xl border bg-card p-5">
         <label htmlFor={field.id} className="block text-base font-normal text-ink">

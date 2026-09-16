@@ -6,6 +6,8 @@ export type IntakeField = {
   options?: string[];
   /** Rendered (and stored) after the marketing content upload field. */
   afterFiles?: boolean;
+  /** Only required (and shown) when this radio answer equals `equals`. */
+  requiredWhen?: { field: string; equals: string };
 };
 
 export const INTAKE_FIELDS: IntakeField[] = [
@@ -59,6 +61,14 @@ export const INTAKE_FIELDS: IntakeField[] = [
     type: "radio",
     options: ["Yes", "No"],
     afterFiles: true,
+  },
+  {
+    id: "domainName",
+    label: "What is your domain?",
+    type: "text",
+    placeholder: "yourbusiness.com",
+    afterFiles: true,
+    requiredWhen: { field: "bringingOwnDomain", equals: "Yes" },
   },
 ];
 
