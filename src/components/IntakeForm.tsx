@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { INTAKE_FIELDS, FILE_FIELD_LABEL } from "@/lib/intake-fields";
+import {
+  FIELDS_AFTER_FILES,
+  FIELDS_BEFORE_FILES,
+  FILE_FIELD_LABEL,
+  INTAKE_FIELDS,
+  type IntakeField,
+} from "@/lib/intake-fields";
 import { submitIntake } from "@/lib/intake.functions";
 import { intakeSchema } from "@/lib/intake-validation";
 
@@ -62,6 +68,95 @@ export default function IntakeForm() {
     }
   }
 
+  function renderTextField(field: IntakeField) {
+    return (
+      <div key={field.id} className="rounded-xl border bg-card p-5">
+        <label htmlFor={field.id} className="block text-base font-normal text-ink">
+          {field.label} <span className="text-primary">*</span>
+        </label>
+        {field.type === "textarea" ? (
+          <textarea
+            id={field.id}
+            rows={4}
+            value={answers[field.id] ?? ""}
+            onChange={(e) => setAnswer(field.id, e.target.value)}
+            className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+        ) : (
+          <input
+            id={field.id}
+            type={field.type}
+            value={answers[field.id] ?? ""}
+            onChange={(e) => setAnswer(field.id, e.target.value)}
+            className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+        )}
+        {errors[field.id] ? (
+          <p className="mt-2 text-sm text-destructive">{errors[field.id]}</p>
+        ) : null}
+      </div>
+    );
+  }
+
+  function renderRadioField(field: IntakeField) {
+    const value = answers[field.id] ?? "";
+    return (
+      <div key={field.id} className="rounded-xl border bg-card p-5">
+        <p className="text-base font-normal text-ink">
+          {field.label} <span className="text-primary">*</span>
+        </p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          {(field.options ?? []).map((option) => {
+            const selected = value === option;
+            return (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setAnswer(field.id, option)}
+                className={[
+                  "min-w-[120px] rounded-full border px-6 py-2 text-sm font-medium transition-colors",
+                  selected
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-input bg-background text-foreground hover:border-primary/50",
+                ].join(" ")}
+              >
+                {option}
+              </button>
+            );
+          })}
+        </div>
+
+        {field.id === "bringingOwnDomain" && value === "No" ? (
+          <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm font-normal text-muted-foreground">
+            <span className="font-medium text-ink">Please note:</span> Lead Genisys wants your
+            infrastructure to be yours — you own the domain, we simply build on it. By selecting
+            "No", you accept that the price of the domain you requested will still be charged on your
+            next invoice.
+          </div>
+        ) : null}
+
+        {field.id === "bringingOwnDomain" && value === "Yes" ? (
+          <div className="mt-4 rounded-lg border bg-muted/40 p-4">
+            <p className="text-sm font-normal text-muted-foreground">
+              Great — we'll build on your existing domain. We just need DNS access at your registrar.
+            </p>
+            <Button asChild variant="outline" size="lg" className="mt-3 w-full sm:w-[320px]">
+              <a href="/dns-access" target="_blank" rel="noopener noreferrer">
+                Open the DNS access guide
+                <ExternalLink />
+              </a>
+            </Button>
+          </div>
+        ) : null}
+
+        {errors[field.id] ? (
+          <p className="mt-2 text-sm text-destructive">{errors[field.id]}</p>
+        ) : null}
+      </div>
+    );
+  }
+
   if (status === "done") {
     return (
       <div className="mt-8 rounded-xl border bg-card p-8 text-center">
@@ -83,33 +178,9 @@ export default function IntakeForm() {
 
   return (
     <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-      {INTAKE_FIELDS.map((field) => (
-        <div key={field.id} className="rounded-xl border bg-card p-5">
-          <label htmlFor={field.id} className="block text-base font-normal text-ink">
-            {field.label} <span className="text-primary">*</span>
-          </label>
-          {field.type === "textarea" ? (
-            <textarea
-              id={field.id}
-              rows={4}
-              value={answers[field.id] ?? ""}
-              onChange={(e) => setAnswer(field.id, e.target.value)}
-              className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-          ) : (
-            <input
-              id={field.id}
-              type={field.type}
-              value={answers[field.id] ?? ""}
-              onChange={(e) => setAnswer(field.id, e.target.value)}
-              className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-          )}
-          {errors[field.id] ? (
-            <p className="mt-2 text-sm text-destructive">{errors[field.id]}</p>
-          ) : null}
-        </div>
-      ))}
+      {FIELDS_BEFORE_FILES.map((field) =>
+        field.type === "radio" ? renderRadioField(field) : renderTextField(field),
+      )}
 
       <div className="rounded-xl border bg-card p-5">
         <label htmlFor="marketingContent" className="block text-base font-normal text-ink">
@@ -134,6 +205,10 @@ export default function IntakeForm() {
           </ul>
         ) : null}
       </div>
+
+      {FIELDS_AFTER_FILES.map((field) =>
+        field.type === "radio" ? renderRadioField(field) : renderTextField(field),
+      )}
 
       {message ? <p className="text-sm text-destructive">{message}</p> : null}
 
