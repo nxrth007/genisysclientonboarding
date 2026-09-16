@@ -1,8 +1,11 @@
 export type IntakeField = {
   id: string;
   label: string;
-  type: "text" | "email" | "textarea";
+  type: "text" | "email" | "textarea" | "radio";
   placeholder?: string;
+  options?: string[];
+  /** Rendered (and stored) after the marketing content upload field. */
+  afterFiles?: boolean;
 };
 
 export const INTAKE_FIELDS: IntakeField[] = [
@@ -50,13 +53,29 @@ export const INTAKE_FIELDS: IntakeField[] = [
   { id: "whyChooseYou", label: "Why customers should choose you", type: "textarea" },
   { id: "brandColors", label: "Brand colors/style preferences", type: "textarea" },
   { id: "faqs", label: "FAQs + answers", type: "textarea" },
+  {
+    id: "bringingOwnDomain",
+    label: "Do you plan on bringing your own domain?",
+    type: "radio",
+    options: ["Yes", "No"],
+    afterFiles: true,
+  },
 ];
 
 export const FILE_FIELD_LABEL =
   "Marketing Content (Logo, Before and After Photos, All Service Photos, etc)";
 
+export const FIELDS_BEFORE_FILES = INTAKE_FIELDS.filter((f) => !f.afterFiles);
+export const FIELDS_AFTER_FILES = INTAKE_FIELDS.filter((f) => f.afterFiles);
+
+/** Column order in the sheet must match the on-screen order of the questions. */
+export const SHEET_COLUMN_FIELDS: IntakeField[] = [...FIELDS_BEFORE_FILES, ...FIELDS_AFTER_FILES];
+
 export const SHEET_HEADERS = [
   "Timestamp",
-  ...INTAKE_FIELDS.map((f) => f.label),
+  ...FIELDS_BEFORE_FILES.map((f) => f.label),
   FILE_FIELD_LABEL,
+  ...FIELDS_AFTER_FILES.map((f) => f.label),
 ];
+
+export const DNS_ACCESS_EMAIL = "alex@leadgenisys.com";
