@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DnsAccessRouteImport } from './routes/dns-access'
 import { Route as Step2RouteImport } from './routes/step-2'
 import { Route as Step3RouteImport } from './routes/step-3'
 import { Route as ApiPublicIntakeWebhookRouteImport } from './routes/api/public/intake-webhook'
@@ -17,6 +18,11 @@ import { Route as ApiPublicIntakeWebhookRouteImport } from './routes/api/public/
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DnsAccessRoute = DnsAccessRouteImport.update({
+  id: '/dns-access',
+  path: '/dns-access',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Step2Route = Step2RouteImport.update({
@@ -37,12 +43,14 @@ const ApiPublicIntakeWebhookRoute = ApiPublicIntakeWebhookRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dns-access': typeof DnsAccessRoute
   '/step-2': typeof Step2Route
   '/step-3': typeof Step3Route
   '/api/public/intake-webhook': typeof ApiPublicIntakeWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dns-access': typeof DnsAccessRoute
   '/step-2': typeof Step2Route
   '/step-3': typeof Step3Route
   '/api/public/intake-webhook': typeof ApiPublicIntakeWebhookRoute
@@ -50,20 +58,29 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dns-access': typeof DnsAccessRoute
   '/step-2': typeof Step2Route
   '/step-3': typeof Step3Route
   '/api/public/intake-webhook': typeof ApiPublicIntakeWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/step-2' | '/step-3' | '/api/public/intake-webhook'
+  fullPaths:
+    '/' | '/dns-access' | '/step-2' | '/step-3' | '/api/public/intake-webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/step-2' | '/step-3' | '/api/public/intake-webhook'
-  id: '__root__' | '/' | '/step-2' | '/step-3' | '/api/public/intake-webhook'
+  to: '/' | '/dns-access' | '/step-2' | '/step-3' | '/api/public/intake-webhook'
+  id:
+    | '__root__'
+    | '/'
+    | '/dns-access'
+    | '/step-2'
+    | '/step-3'
+    | '/api/public/intake-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DnsAccessRoute: typeof DnsAccessRoute
   Step2Route: typeof Step2Route
   Step3Route: typeof Step3Route
   ApiPublicIntakeWebhookRoute: typeof ApiPublicIntakeWebhookRoute
@@ -76,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dns-access': {
+      id: '/dns-access'
+      path: '/dns-access'
+      fullPath: '/dns-access'
+      preLoaderRoute: typeof DnsAccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/step-2': {
@@ -104,6 +128,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DnsAccessRoute: DnsAccessRoute,
   Step2Route: Step2Route,
   Step3Route: Step3Route,
   ApiPublicIntakeWebhookRoute: ApiPublicIntakeWebhookRoute,

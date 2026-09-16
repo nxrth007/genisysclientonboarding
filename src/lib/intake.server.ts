@@ -1,4 +1,4 @@
-import { INTAKE_FIELDS, SHEET_HEADERS } from "./intake-fields";
+import { FIELDS_AFTER_FILES, FIELDS_BEFORE_FILES, SHEET_HEADERS } from "./intake-fields";
 import { buildIntakeWebhookPayload, sendIntakeWebhooks } from "./intake-webhook.server";
 
 const SPREADSHEET_ID = "1NGkkUtVM0tf1J8G8ibCLQ0LIB9RK_EtnXgipHizYCIs";
@@ -38,7 +38,7 @@ async function sheetsFetch(path: string, init: RequestInit) {
 }
 
 async function ensureHeaderRow() {
-  const existing = (await sheetsFetch(`/values/${SHEET_NAME}!A1:Z1`, { method: "GET" })) as {
+  const existing = (await sheetsFetch(`/values/${SHEET_NAME}!A1:AZ1`, { method: "GET" })) as {
     values?: string[][];
   };
   const current = existing.values?.[0] ?? [];
@@ -76,11 +76,12 @@ export async function recordIntakeSubmission({ answers, filePaths }: IntakeSubmi
   const payload = buildIntakeWebhookPayload(answers, fileUrls, submittedAt);
   const row = [
     submittedAt,
-    ...INTAKE_FIELDS.map((field) => answers[field.id] ?? ""),
+    ...FIELDS_BEFORE_FILES.map((field) => answers[field.id] ?? ""),
     fileUrls.join("\n"),
+    ...FIELDS_AFTER_FILES.map((field) => answers[field.id] ?? ""),
   ];
   await sheetsFetch(
-    `/values/${SHEET_NAME}!A1:Z1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+    `/values/${SHEET_NAME}!A1:AZ1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
     { method: "POST", body: JSON.stringify({ values: [row] }) },
   );
   await sendIntakeWebhooks(payload);
