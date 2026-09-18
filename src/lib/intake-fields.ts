@@ -8,6 +8,8 @@ export type IntakeField = {
   afterFiles?: boolean;
   /** Only required (and shown) when this radio answer equals `equals`. */
   requiredWhen?: { field: string; equals: string };
+  /** Optional helper note shown under the label. */
+  note?: string;
 };
 
 export const INTAKE_FIELDS: IntakeField[] = [
@@ -18,7 +20,12 @@ export const INTAKE_FIELDS: IntakeField[] = [
     placeholder: "XX-XXXXXXX",
   },
   { id: "fullName", label: "Full Name", type: "text" },
-  { id: "businessName", label: "Business Name", type: "text" },
+  {
+    id: "businessName",
+    label: "Legal Business Name",
+    type: "text",
+    note: "Please note: this must be the legally registered business name exactly as it appears on your IRS CP-575 (EIN confirmation letter).",
+  },
   { id: "businessContact", label: "Business Contact Information", type: "text" },
   { id: "businessAddress", label: "Business Address", type: "text" },
   {

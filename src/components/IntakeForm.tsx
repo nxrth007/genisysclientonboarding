@@ -21,6 +21,7 @@ export default function IntakeForm() {
   const submit = useServerFn(submitIntake);
   const [answers, setAnswers] = useState<Record<string, string>>(emptyAnswers);
   const [files, setFiles] = useState<File[]>([]);
+  const [cp575Files, setCp575Files] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -34,6 +35,13 @@ export default function IntakeForm() {
     for (const file of files) {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const path = `${prefix}/${safeName}`;
+      const { error } = await supabase.storage.from("intake-uploads").upload(path, file);
+      if (error) throw new Error(`Could not upload ${file.name}: ${error.message}`);
+      paths.push(path);
+    }
+    for (const file of cp575Files) {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${prefix}/cp575-${safeName}`;
       const { error } = await supabase.storage.from("intake-uploads").upload(path, file);
       if (error) throw new Error(`Could not upload ${file.name}: ${error.message}`);
       paths.push(path);
@@ -80,6 +88,9 @@ export default function IntakeForm() {
         <label htmlFor={field.id} className="block text-base font-normal text-ink">
           {field.label} <span className="text-primary">*</span>
         </label>
+        {field.note ? (
+          <p className="mt-1 text-sm text-muted-foreground">{field.note}</p>
+        ) : null}
         {field.type === "textarea" ? (
           <textarea
             id={field.id}
@@ -206,6 +217,30 @@ export default function IntakeForm() {
         {files.length > 0 ? (
           <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
             {files.map((file) => (
+              <li key={file.name}>{file.name}</li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+
+      <div className="rounded-xl border bg-card p-5">
+        <label htmlFor="cp575Document" className="block text-base font-normal text-ink">
+          CP-575 Document (optional)
+        </label>
+        <p className="mt-1 text-sm text-muted-foreground">
+          If you have it handy, upload your IRS CP-575 (EIN confirmation letter) — PDF or photo is
+          fine. This helps us verify your legal business name for text messaging registration.
+        </p>
+        <input
+          id="cp575Document"
+          type="file"
+          accept="image/*,.pdf"
+          onChange={(e) => setCp575Files(Array.from(e.target.files ?? []).slice(0, 1))}
+          className="mt-3 block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border file:border-input file:bg-background file:px-4 file:py-2 file:text-sm file:text-foreground"
+        />
+        {cp575Files.length > 0 ? (
+          <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+            {cp575Files.map((file) => (
               <li key={file.name}>{file.name}</li>
             ))}
           </ul>
