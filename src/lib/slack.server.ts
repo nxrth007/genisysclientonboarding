@@ -78,8 +78,16 @@ async function ensureAlertChannel(): Promise<string> {
     if (hit) return hit.id;
     cursor = data.response_metadata?.next_cursor ?? "";
   } while (cursor);
-  const created = await slackFetch("conversations.create", { name, is_private: false });
-  return created.channel.id;
+  try {
+    const created = await slackFetch("conversations.create", { name, is_private: false });
+    return created.channel.id;
+  } catch (e) {
+    // name_taken: the channel exists but is private and the bot isn't a member,
+    // so it was invisible to conversations.list. Fall back to posting by name —
+    // this works once the bot has been invited to the private channel.
+    if (e instanceof Error && e.message.includes("name_taken")) return `#${name}`;
+    throw e;
+  }
 }
 
 async function postAlert(text: string) {
