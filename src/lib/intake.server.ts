@@ -1,5 +1,6 @@
 import { FIELDS_AFTER_FILES, FIELDS_BEFORE_FILES, SHEET_HEADERS } from "./intake-fields";
 import { buildIntakeWebhookPayload, sendIntakeWebhooks } from "./intake-webhook.server";
+import { onboardToSlack } from "./slack.server";
 
 const SPREADSHEET_ID = "1NGkkUtVM0tf1J8G8ibCLQ0LIB9RK_EtnXgipHizYCIs";
 const SHEET_NAME = "Sheet1";
@@ -84,6 +85,6 @@ export async function recordIntakeSubmission({ answers, filePaths }: IntakeSubmi
     `/values/${SHEET_NAME}!A1:AZ1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
     { method: "POST", body: JSON.stringify({ values: [row] }) },
   );
-  await sendIntakeWebhooks(payload);
-  return { ok: true as const, payload };
+  const [, slack] = await Promise.all([sendIntakeWebhooks(payload), onboardToSlack(payload)]);
+  return { ok: true as const, payload, slack };
 }

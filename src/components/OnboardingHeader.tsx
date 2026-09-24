@@ -3,8 +3,8 @@ import logo from "@/assets/lead-genisys-logo.png";
 
 const steps = [
   { to: "/", label: "Intake Form" },
-  { to: "/step-2", label: "Book Launch Call" },
-  { to: "/step-3", label: "You're Booked" },
+  { to: "/step-2", label: "Join Slack" },
+  { to: "/step-3", label: "You're In" },
 ] as const;
 
 export function OnboardingHeader({ current }: { current: 1 | 2 | 3 }) {
