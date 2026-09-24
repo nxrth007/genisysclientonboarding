@@ -60,13 +60,32 @@ async function createChannel(base: string): Promise<{ id: string; name: string }
   throw new Error("Could not find a free channel name");
 }
 
-function alertChannel() {
-  return (process.env["SLACK_ALERT_CHANNEL"] ?? "new-clients").replace(/^#/, "");
+function alertChannelName() {
+  return (process.env["SLACK_ALERT_CHANNEL"] ?? "internal-alerts").replace(/^#/, "");
+}
+
+/** Finds the alerts channel, creating it (public) on first use. */
+async function ensureAlertChannel(): Promise<string> {
+  const name = alertChannelName();
+  let cursor = "";
+  do {
+    const data = await slackFetch("conversations.list", {
+      limit: 200,
+      types: "public_channel,private_channel",
+      ...(cursor ? { cursor } : {}),
+    });
+    const hit = (data.channels ?? []).find((c: any) => c.name === name);
+    if (hit) return hit.id;
+    cursor = data.response_metadata?.next_cursor ?? "";
+  } while (cursor);
+  const created = await slackFetch("conversations.create", { name, is_private: false });
+  return created.channel.id;
 }
 
 async function postAlert(text: string) {
   try {
-    await slackFetch("chat.postMessage", { channel: alertChannel(), text });
+    const channelId = await ensureAlertChannel();
+    await slackFetch("chat.postMessage", { channel: channelId, text });
   } catch (e) {
     console.error("Slack alert failed", e);
   }
