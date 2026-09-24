@@ -5,18 +5,18 @@ import OnboardingHeader from "@/components/OnboardingHeader";
 export const Route = createFileRoute("/step-3")({
   head: () => ({
     meta: [
-      { title: "You're Booked | Lead Genisys Onboarding" },
+      { title: "You're In | Lead Genisys Onboarding" },
       {
         name: "description",
-        content:
-          "Your launch call is booked. Check your email to confirm the onboarding call and accept the calendar invite.",
+        content: "You're onboarded with Lead Genisys. Your team will reach out in your private Slack channel.",
       },
-      { property: "og:title", content: "You're Booked | Lead Genisys Onboarding" },
+      { property: "og:title", content: "You're In | Lead Genisys Onboarding" },
       {
         property: "og:description",
-        content:
-          "Your launch call is booked. Check your email to confirm the onboarding call and accept the calendar invite.",
+        content: "You're onboarded with Lead Genisys. Your team will reach out in your private Slack channel.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Step3,
@@ -24,24 +24,16 @@ export const Route = createFileRoute("/step-3")({
 
 const checklist = [
   {
-    title: "Open your email inbox",
-    body: "Look for the confirmation email from Lead Genisys. Check spam or promotions if it isn't in your primary inbox.",
+    title: "We're building your system",
+    body: "Our team is already working with the details and files you sent.",
   },
   {
-    title: "Confirm the onboarding call",
-    body: "Click the confirmation link in that email so your launch call is locked in with our team.",
+    title: "Watch your Slack channel",
+    body: "We'll post updates, questions and your launch timing there.",
   },
   {
-    title: "Accept the calendar invite",
-    body: "Add the invite to your calendar so you get reminders and the meeting link ahead of the call.",
-  },
-  {
-    title: "Accept the Slack invite",
-    body: "You'll also get a Slack invite by email. Accept it to join your dedicated channel.",
-  },
-  {
-    title: "Get into Slack",
-    body: "Slack is where you'll be communicating with us day to day, so sign in before the call.",
+    title: "Turn on Slack notifications",
+    body: "Install Slack on your phone so you don't miss a message from us.",
   },
 ];
 
@@ -52,10 +44,9 @@ function Step3() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12">
         <div className="space-y-3 text-center">
           <p className="text-sm text-primary">Last step</p>
-          <h1 className="text-3xl font-medium tracking-tight text-ink md:text-4xl">You're booked</h1>
+          <h1 className="text-3xl font-medium tracking-tight text-ink md:text-4xl">You're in</h1>
           <p className="mx-auto max-w-2xl text-lg font-normal text-muted-foreground">
-            A few things left: confirm the onboarding call in your email, accept the calendar invite,
-            and join us in Slack.
+            Welcome to Lead Genisys. Here's what happens next.
           </p>
         </div>
 
@@ -71,17 +62,13 @@ function Step3() {
           ))}
         </ol>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Your spot isn't final until the email confirmation is clicked.
-        </p>
-
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button asChild variant="outline" size="lg" className="w-full sm:w-[320px]">
-            <Link to="/step-2">Back to booking</Link>
+            <Link to="/step-2">Back</Link>
           </Button>
           <Button asChild variant="brand" size="lg" className="w-full sm:w-[320px]">
-            <a href="https://mail.google.com" target="_blank" rel="noreferrer">
-              Open my email
+            <a href="https://app.slack.com" target="_blank" rel="noreferrer">
+              Open Slack
             </a>
           </Button>
         </div>

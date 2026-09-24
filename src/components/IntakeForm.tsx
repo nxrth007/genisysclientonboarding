@@ -179,7 +179,7 @@ export default function IntakeForm() {
       <div className="mt-8 rounded-xl border bg-card p-8 text-center">
         <h2 className="text-xl font-medium text-ink">Thanks — your intake form is in.</h2>
         <p className="mx-auto mt-2 max-w-xl text-muted-foreground">
-          Our team has everything needed to start building. Next, book your launch call.
+          Our team has everything needed to start building. Next, join us on Slack.
         </p>
         <div className="mt-6 flex justify-center">
           <Button asChild variant="brand" size="lg" className="w-full sm:w-[320px]">
