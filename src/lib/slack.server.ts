@@ -2,9 +2,9 @@ import type { IntakeWebhookPayload } from "./intake-webhook.server";
 
 export type SlackOnboardResult = {
   ok: boolean;
-  channelName?: string;
-  invited?: boolean;
-  error?: string;
+  channelName?: string | undefined;
+  invited?: boolean | undefined;
+  error?: string | undefined;
 };
 
 /**
@@ -73,15 +73,15 @@ async function postAlert(text: string) {
 }
 
 function summary(payload: IntakeWebhookPayload) {
-  const a = payload.answers;
+  const a = payload.answers as Record<string, string> & { [k: string]: string };
   return [
-    `*New client intake:* ${a.businessName || a.fullName}`,
-    `• Name: ${a.fullName}`,
-    `• Email: ${a.leadEmail}`,
-    `• Phone: ${a.customerPhone}`,
-    `• Cities: ${a.cities}`,
-    `• Website: ${a.website}`,
-    `• Own domain: ${a.bringingOwnDomain}${a.domainName ? ` (${a.domainName})` : ""}`,
+    `*New client intake:* ${a["businessName"] || a["fullName"]}`,
+    `• Name: ${a["fullName"]}`,
+    `• Email: ${a["leadEmail"]}`,
+    `• Phone: ${a["customerPhone"]}`,
+    `• Cities: ${a["cities"]}`,
+    `• Website: ${a["website"]}`,
+    `• Own domain: ${a["bringingOwnDomain"]}${a["domainName"] ? ` (${a["domainName"]})` : ""}`,
     payload.files.length ? `• Files: ${payload.files.length} uploaded` : "",
   ]
     .filter(Boolean)
@@ -90,10 +90,10 @@ function summary(payload: IntakeWebhookPayload) {
 
 /** Never throws: Slack problems must not break the client's submission. */
 export async function onboardToSlack(payload: IntakeWebhookPayload): Promise<SlackOnboardResult> {
-  const a = payload.answers;
+  const a = payload.answers as Record<string, string> & { [k: string]: string };
   let channel: { id: string; name: string } | undefined;
   try {
-    channel = await createChannel(slugify(a.businessName || a.fullName || ""));
+    channel = await createChannel(slugify(a["businessName"] || a["fullName"] || ""));
 
     const teamEmails = (process.env["SLACK_TEAM_EMAILS"] ?? "")
       .split(",")
@@ -118,12 +118,12 @@ export async function onboardToSlack(payload: IntakeWebhookPayload): Promise<Sla
 
     await slackFetch("chat.postMessage", {
       channel: channel.id,
-      text: `Welcome ${a.fullName}! This is your private channel with the Lead Genisys team.`,
+      text: `Welcome ${a["fullName"]}! This is your private channel with the Lead Genisys team.`,
     });
 
-    await slackFetch("conversations.inviteShared", { channel: channel.id, emails: [a.leadEmail] });
+    await slackFetch("conversations.inviteShared", { channel: channel.id, emails: [a["leadEmail"]] });
 
-    await postAlert(`${summary(payload)}\n• Channel: #${channel.name} — Slack invite sent to ${a.leadEmail}`);
+    await postAlert(`${summary(payload)}\n• Channel: #${channel.name} — Slack invite sent to ${a["leadEmail"]}`);
     return { ok: true, channelName: channel.name, invited: true };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
@@ -131,7 +131,7 @@ export async function onboardToSlack(payload: IntakeWebhookPayload): Promise<Sla
     await postAlert(
       `${summary(payload)}\n:warning: Automatic Slack invite failed (${error}).${
         channel ? ` Channel #${channel.name} was created.` : ""
-      } Please invite ${a.leadEmail} manually.`,
+      } Please invite ${a["leadEmail"]} manually.`,
     );
     return { ok: false, channelName: channel?.name, invited: false, error };
   }
