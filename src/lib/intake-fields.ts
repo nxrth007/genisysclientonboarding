@@ -10,6 +10,10 @@ export type IntakeField = {
   requiredWhen?: { field: string; equals: string };
   /** Optional helper note shown under the label. */
   note?: string;
+  /** Can be left blank (shown as "optional" instead of the required star). */
+  optional?: boolean;
+  /** Starts a new section: a heading (and optional intro) shown above this question. */
+  section?: { title: string; intro?: string };
 };
 
 export const INTAKE_FIELDS: IntakeField[] = [
@@ -58,7 +62,12 @@ export const INTAKE_FIELDS: IntakeField[] = [
     type: "textarea",
   },
   { id: "promotions", label: "Current promotions/offers", type: "textarea" },
-  { id: "socialLinks", label: "Social media/online profile links", type: "textarea" },
+  {
+    id: "socialLinks",
+    label: "Social media pages (Facebook, Instagram, etc.) — paste the full links",
+    type: "textarea",
+    note: "The full link to your page, e.g. facebook.com/yourbusiness. If you don't have any, put N/A.",
+  },
   { id: "whyChooseYou", label: "Why customers should choose you", type: "textarea" },
   { id: "brandColors", label: "Brand colors/style preferences", type: "textarea" },
   { id: "faqs", label: "FAQs + answers", type: "textarea" },
@@ -76,6 +85,52 @@ export const INTAKE_FIELDS: IntakeField[] = [
     placeholder: "yourbusiness.com",
     afterFiles: true,
     requiredWhen: { field: "bringingOwnDomain", equals: "Yes" },
+  },
+  // Added at the end so the Google Sheet's existing columns keep their place.
+  {
+    id: "hasGoogleProfile",
+    label: "Do you have a Google Business Profile? (your business listing on Google Maps)",
+    type: "radio",
+    options: ["Yes", "No", "Not sure"],
+    afterFiles: true,
+    section: {
+      title: "Help us get you found on Google",
+      intro: "A few quick details that help your business show up on Google and in AI answers like ChatGPT.",
+    },
+  },
+  {
+    id: "googleProfileLink",
+    label: "Link to your Google Business Profile",
+    type: "text",
+    placeholder: "https://maps.app.goo.gl/…",
+    note: "Open Google Maps, search your business name, tap Share, then Copy link — and paste it here.",
+    afterFiles: true,
+    requiredWhen: { field: "hasGoogleProfile", equals: "Yes" },
+  },
+  {
+    id: "yearStarted",
+    label: "What year did your business start?",
+    type: "text",
+    placeholder: "2012",
+    afterFiles: true,
+    optional: true,
+  },
+  {
+    id: "licenseInfo",
+    label: "Contractor license number(s) and who issued them",
+    type: "text",
+    placeholder: "e.g. #0081234 — State Contractors Board",
+    note: "Leave blank if your trade doesn't require a license.",
+    afterFiles: true,
+    optional: true,
+  },
+  {
+    id: "reviewLinks",
+    label: "Review sites you're listed on — paste the full links",
+    type: "textarea",
+    note: "Yelp, Angi / HomeAdvisor, BBB, Thumbtack, Houzz, Nextdoor — the link to your page on each one you have.",
+    afterFiles: true,
+    optional: true,
   },
 ];
 

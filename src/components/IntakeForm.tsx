@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, ExternalLink } from "lucide-react";
@@ -86,7 +86,7 @@ export default function IntakeForm() {
     return (
       <div key={field.id} className="rounded-xl border bg-card p-5">
         <label htmlFor={field.id} className="block text-base font-normal text-ink">
-          {field.label} <span className="text-primary">*</span>
+          {field.label} <RequiredMark field={field} />
         </label>
         {field.note ? (
           <p className="mt-1 text-sm text-muted-foreground">{field.note}</p>
@@ -120,7 +120,7 @@ export default function IntakeForm() {
     return (
       <div key={field.id} className="rounded-xl border bg-card p-5">
         <p className="text-base font-normal text-ink">
-          {field.label} <span className="text-primary">*</span>
+          {field.label} <RequiredMark field={field} />
         </p>
         <div className="mt-3 flex flex-wrap gap-3">
           {(field.options ?? []).map((option) => {
@@ -195,9 +195,12 @@ export default function IntakeForm() {
 
   return (
     <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-      {FIELDS_BEFORE_FILES.map((field) =>
-        field.type === "radio" ? renderRadioField(field) : renderTextField(field),
-      )}
+      {FIELDS_BEFORE_FILES.map((field) => (
+        <Fragment key={field.id}>
+          {field.section ? <SectionHeading section={field.section} /> : null}
+          {field.type === "radio" ? renderRadioField(field) : renderTextField(field)}
+        </Fragment>
+      ))}
 
       <div className="rounded-xl border bg-card p-5">
         <label htmlFor="marketingContent" className="block text-base font-normal text-ink">
@@ -247,9 +250,12 @@ export default function IntakeForm() {
         ) : null}
       </div>
 
-      {FIELDS_AFTER_FILES.map((field) =>
-        field.type === "radio" ? renderRadioField(field) : renderTextField(field),
-      )}
+      {FIELDS_AFTER_FILES.map((field) => (
+        <Fragment key={field.id}>
+          {field.section ? <SectionHeading section={field.section} /> : null}
+          {field.type === "radio" ? renderRadioField(field) : renderTextField(field)}
+        </Fragment>
+      ))}
 
       {message ? <p className="text-sm text-destructive">{message}</p> : null}
 
@@ -266,5 +272,22 @@ export default function IntakeForm() {
         </Button>
       </div>
     </form>
+  );
+}
+
+function RequiredMark({ field }: { field: IntakeField }) {
+  return field.optional ? (
+    <span className="ml-1 text-sm text-muted-foreground">(optional)</span>
+  ) : (
+    <span className="text-primary">*</span>
+  );
+}
+
+function SectionHeading({ section }: { section: NonNullable<IntakeField["section"]> }) {
+  return (
+    <div className="pt-6">
+      <h2 className="text-xl font-semibold text-ink">{section.title}</h2>
+      {section.intro ? <p className="mt-1 text-sm text-muted-foreground">{section.intro}</p> : null}
+    </div>
   );
 }

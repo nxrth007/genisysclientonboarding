@@ -24,8 +24,8 @@ const answersSchema = z.object(
   Object.fromEntries(
     INTAKE_FIELDS.map((field) => [
       field.id,
-      field.requiredWhen
-        ? z.string().trim().max(500)
+      field.requiredWhen || field.optional
+        ? z.string().trim().max(field.type === "textarea" ? 5000 : 500)
         : fieldSchema(field),
     ]),
   ) as Record<string, z.ZodType<string>>,
