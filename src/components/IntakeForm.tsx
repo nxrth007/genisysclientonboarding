@@ -170,7 +170,7 @@ export default function IntakeForm() {
                 asChild
                 variant="outline"
                 size="lg"
-                className="-mt-1.5 w-full sm:w-[320px]"
+                className="-mt-0.5 w-full sm:w-[320px]"
               >
                 <a href="/dns-access" target="_blank" rel="noopener noreferrer">
                   Open the DNS access guide
