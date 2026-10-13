@@ -1,7 +1,7 @@
 import { Fragment, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ExternalLink, Info } from "lucide-react";
+import { ArrowBigDown, ArrowRight, ExternalLink, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -156,16 +156,28 @@ export default function IntakeForm() {
         ) : null}
 
         {field.id === "bringingOwnDomain" && value === "Yes" ? (
-          <div className="mt-4 rounded-lg border bg-muted/40 p-4">
-            <p className="text-sm font-normal text-muted-foreground">
+          <div className="mt-4 rounded-lg border bg-muted/40 p-4 pb-5">
+            <p className="text-center text-sm font-normal text-muted-foreground">
               Great — we'll build on your existing domain. We just need DNS access at your registrar.
             </p>
-            <Button asChild variant="outline" size="lg" className="mt-3 w-full sm:w-[320px]">
-              <a href="/dns-access" target="_blank" rel="noopener noreferrer">
-                Open the DNS access guide
-                <ExternalLink />
-              </a>
-            </Button>
+            <div className="mt-1 flex flex-col items-center">
+              <ArrowBigDown
+                className="h-6 w-6 animate-bounce text-primary motion-reduce:animate-none"
+                strokeWidth={2}
+                aria-hidden
+              />
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="-mt-0.5 w-full sm:w-[320px]"
+              >
+                <a href="/dns-access" target="_blank" rel="noopener noreferrer">
+                  Open the DNS access guide
+                  <ExternalLink />
+                </a>
+              </Button>
+            </div>
           </div>
         ) : null}
 
