@@ -279,22 +279,24 @@ export default function IntakeForm() {
 
 function FieldLabel({ field, htmlFor }: { field: IntakeField; htmlFor?: string }) {
   const label = htmlFor ? (
-    <label htmlFor={htmlFor} className="text-base font-normal text-ink">
+    <label htmlFor={htmlFor} className="inline">
       {field.label} <RequiredMark field={field} />
     </label>
   ) : (
-    <span className="text-base font-normal text-ink">
+    <span>
       {field.label} <RequiredMark field={field} />
     </span>
   );
 
-  if (!field.help) return label;
+  if (!field.help) {
+    return <p className="text-base font-normal text-ink">{label}</p>;
+  }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-1.5">
+    <p className="text-base font-normal text-ink">
       {label}
       <HelpChip text={field.help} />
-    </div>
+    </p>
   );
 }
 
