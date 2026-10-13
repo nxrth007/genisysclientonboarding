@@ -156,11 +156,11 @@ export default function IntakeForm() {
         ) : null}
 
         {field.id === "bringingOwnDomain" && value === "Yes" ? (
-          <div className="mt-4 rounded-lg border bg-muted/40 p-4">
-            <p className="text-sm font-normal text-muted-foreground">
+          <div className="mt-4 rounded-lg border bg-muted/40 p-4 pb-5">
+            <p className="text-center text-sm font-normal text-muted-foreground">
               Great — we'll build on your existing domain. We just need DNS access at your registrar.
             </p>
-            <div className="mt-3 flex flex-col items-center">
+            <div className="mt-1 flex flex-col items-center">
               <ArrowBigDown
                 className="h-6 w-6 animate-bounce text-primary motion-reduce:animate-none"
                 strokeWidth={2}
