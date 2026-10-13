@@ -323,7 +323,7 @@ function HelpChip({ text }: { text: string }) {
             type="button"
             aria-label="Why we ask for this"
             onClick={toggle}
-            className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-primary/50 text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="ml-1 inline-flex h-4 w-4 align-middle items-center justify-center rounded-full border border-primary/50 text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Info className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden />
           </button>
