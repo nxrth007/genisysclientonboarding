@@ -300,14 +300,27 @@ function FieldLabel({ field, htmlFor }: { field: IntakeField; htmlFor?: string }
 
 function HelpChip({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
+  const pinned = useRef(false);
+
+  function handleOpenChange(next: boolean) {
+    if (pinned.current && !next) return;
+    if (!next) pinned.current = false;
+    setOpen(next);
+  }
+
+  function toggle() {
+    pinned.current = !pinned.current;
+    setOpen(pinned.current);
+  }
+
   return (
     <TooltipProvider delayDuration={150}>
-      <Tooltip open={open} onOpenChange={setOpen}>
+      <Tooltip open={open} onOpenChange={handleOpenChange}>
         <TooltipTrigger asChild>
           <button
             type="button"
             aria-label="Why we ask for this"
-            onClick={() => setOpen((v) => !v)}
+            onClick={toggle}
             className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-primary/50 text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Info className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden />
