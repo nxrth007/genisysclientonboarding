@@ -1,9 +1,15 @@
 import { Fragment, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import {
   FIELDS_AFTER_FILES,
@@ -85,9 +91,7 @@ export default function IntakeForm() {
     }
     return (
       <div key={field.id} className="rounded-xl border bg-card p-5">
-        <label htmlFor={field.id} className="block text-base font-normal text-ink">
-          {field.label} <RequiredMark field={field} />
-        </label>
+        <FieldLabel field={field} htmlFor={field.id} />
         {field.note ? (
           <p className="mt-1 text-sm text-muted-foreground">{field.note}</p>
         ) : null}
@@ -119,9 +123,7 @@ export default function IntakeForm() {
     const value = answers[field.id] ?? "";
     return (
       <div key={field.id} className="rounded-xl border bg-card p-5">
-        <p className="text-base font-normal text-ink">
-          {field.label} <RequiredMark field={field} />
-        </p>
+        <FieldLabel field={field} />
         <div className="mt-3 flex flex-wrap gap-3">
           {(field.options ?? []).map((option) => {
             const selected = value === option;
@@ -272,6 +274,51 @@ export default function IntakeForm() {
         </Button>
       </div>
     </form>
+  );
+}
+
+function FieldLabel({ field, htmlFor }: { field: IntakeField; htmlFor?: string }) {
+  const label = htmlFor ? (
+    <label htmlFor={htmlFor} className="text-base font-normal text-ink">
+      {field.label} <RequiredMark field={field} />
+    </label>
+  ) : (
+    <span className="text-base font-normal text-ink">
+      {field.label} <RequiredMark field={field} />
+    </span>
+  );
+
+  if (!field.help) return label;
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-1.5">
+      {label}
+      <HelpChip text={field.help} />
+    </div>
+  );
+}
+
+function HelpChip({ text }: { text: string }) {
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label="Why we ask for this"
+            className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-primary/50 text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Info className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          className="max-w-[280px] rounded-lg border bg-card p-3 text-sm font-normal leading-relaxed text-card-foreground shadow-lg"
+        >
+          {text}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
