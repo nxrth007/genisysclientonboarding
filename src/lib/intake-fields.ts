@@ -91,7 +91,7 @@ export const INTAKE_FIELDS: IntakeField[] = [
     id: "hasGoogleProfile",
     label: "Do you have a Google Business Profile? (your business listing on Google Maps)",
     type: "radio",
-    options: ["Yes", "No", "Not sure"],
+    options: ["Yes", "No"],
     afterFiles: true,
     section: {
       title: "Help us get you found on Google",

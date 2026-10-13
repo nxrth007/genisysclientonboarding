@@ -228,7 +228,7 @@ export default function IntakeForm() {
 
       <div className="rounded-xl border bg-card p-5">
         <label htmlFor="cp575Document" className="block text-base font-normal text-ink">
-          CP-575 Document (optional)
+          CP-575 Document (optional but strongly encouraged)
         </label>
         <p className="mt-1 text-sm text-muted-foreground">
           If you have it handy, upload your IRS CP-575 (EIN confirmation letter) — PDF or photo is
