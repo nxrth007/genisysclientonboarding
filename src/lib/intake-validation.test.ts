@@ -11,7 +11,7 @@ function inputWithProfile(answer: string) {
       field.type === "radio" ? "No" : field.type === "email" ? "test@example.com" : "Test",
     ]),
   );
-  answers.hasGoogleProfile = answer;
+  answers["hasGoogleProfile"] = answer;
   return { answers, filePaths: [] };
 }
 
