@@ -10,6 +10,8 @@ export type IntakeField = {
   requiredWhen?: { field: string; equals: string };
   /** Optional helper note shown under the label. */
   note?: string;
+  /** Shown in a hover tooltip on the small "i" beside the required star. */
+  help?: string;
   /** Can be left blank (shown as "optional" instead of the required star). */
   optional?: boolean;
   /** Starts a new section: a heading (and optional intro) shown above this question. */
@@ -22,6 +24,7 @@ export const INTAKE_FIELDS: IntakeField[] = [
     label: "EIN (Employer Identification Number) — needed to send text messages to potential clients",
     type: "text",
     placeholder: "XX-XXXXXXX",
+    help: "We use your EIN to register your business for A2P 10DLC text messaging compliance. Wireless carriers require a verified business identity before marketing texts can be delivered — without this registration, messages to potential clients get filtered or blocked.",
   },
   { id: "fullName", label: "Full Name", type: "text" },
   {

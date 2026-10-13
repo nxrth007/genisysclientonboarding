@@ -1,9 +1,15 @@
-import { Fragment, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import {
   FIELDS_AFTER_FILES,
@@ -85,9 +91,7 @@ export default function IntakeForm() {
     }
     return (
       <div key={field.id} className="rounded-xl border bg-card p-5">
-        <label htmlFor={field.id} className="block text-base font-normal text-ink">
-          {field.label} <RequiredMark field={field} />
-        </label>
+        <FieldLabel field={field} htmlFor={field.id} />
         {field.note ? (
           <p className="mt-1 text-sm text-muted-foreground">{field.note}</p>
         ) : null}
@@ -119,9 +123,7 @@ export default function IntakeForm() {
     const value = answers[field.id] ?? "";
     return (
       <div key={field.id} className="rounded-xl border bg-card p-5">
-        <p className="text-base font-normal text-ink">
-          {field.label} <RequiredMark field={field} />
-        </p>
+        <FieldLabel field={field} />
         <div className="mt-3 flex flex-wrap gap-3">
           {(field.options ?? []).map((option) => {
             const selected = value === option;
@@ -272,6 +274,68 @@ export default function IntakeForm() {
         </Button>
       </div>
     </form>
+  );
+}
+
+function FieldLabel({ field, htmlFor }: { field: IntakeField; htmlFor?: string }) {
+  const label = htmlFor ? (
+    <label htmlFor={htmlFor} className="inline">
+      {field.label} <RequiredMark field={field} />
+    </label>
+  ) : (
+    <span>
+      {field.label} <RequiredMark field={field} />
+    </span>
+  );
+
+  if (!field.help) {
+    return <p className="text-base font-normal text-ink">{label}</p>;
+  }
+
+  return (
+    <p className="text-base font-normal text-ink">
+      {label}
+      <HelpChip text={field.help} />
+    </p>
+  );
+}
+
+function HelpChip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const pinned = useRef(false);
+
+  function handleOpenChange(next: boolean) {
+    if (pinned.current && !next) return;
+    if (!next) pinned.current = false;
+    setOpen(next);
+  }
+
+  function toggle() {
+    pinned.current = !pinned.current;
+    setOpen(pinned.current);
+  }
+
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip open={open} onOpenChange={handleOpenChange}>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label="Why we ask for this"
+            onClick={toggle}
+            className="ml-1 inline-flex h-4 w-4 align-middle items-center justify-center rounded-full border border-primary/50 text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Info className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          className="max-w-[280px] rounded-lg border bg-card p-3 text-sm font-normal leading-relaxed text-card-foreground shadow-lg"
+        >
+          {text}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
