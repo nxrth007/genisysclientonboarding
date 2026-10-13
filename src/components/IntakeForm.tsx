@@ -1,7 +1,7 @@
 import { Fragment, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ExternalLink, Info } from "lucide-react";
+import { ArrowBigDown, ArrowRight, ExternalLink, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -160,7 +160,14 @@ export default function IntakeForm() {
             <p className="text-sm font-normal text-muted-foreground">
               Great — we'll build on your existing domain. We just need DNS access at your registrar.
             </p>
-            <Button asChild variant="outline" size="lg" className="mt-3 w-full sm:w-[320px]">
+            <div className="mt-2 flex w-full justify-center sm:w-[320px]">
+              <ArrowBigDown
+                className="h-7 w-7 animate-bounce text-primary motion-reduce:animate-none"
+                strokeWidth={1.75}
+                aria-hidden
+              />
+            </div>
+            <Button asChild variant="outline" size="lg" className="mt-1 w-full sm:w-[320px]">
               <a href="/dns-access" target="_blank" rel="noopener noreferrer">
                 Open the DNS access guide
                 <ExternalLink />
