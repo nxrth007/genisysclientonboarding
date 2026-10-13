@@ -160,19 +160,24 @@ export default function IntakeForm() {
             <p className="text-sm font-normal text-muted-foreground">
               Great — we'll build on your existing domain. We just need DNS access at your registrar.
             </p>
-            <div className="mt-2 flex w-full justify-center sm:w-[320px]">
+            <div className="mt-3 flex flex-col items-center">
               <ArrowBigDown
-                className="h-7 w-7 animate-bounce text-primary motion-reduce:animate-none"
-                strokeWidth={1.75}
+                className="h-6 w-6 animate-bounce text-primary motion-reduce:animate-none"
+                strokeWidth={2}
                 aria-hidden
               />
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="-mt-1.5 w-full sm:w-[320px]"
+              >
+                <a href="/dns-access" target="_blank" rel="noopener noreferrer">
+                  Open the DNS access guide
+                  <ExternalLink />
+                </a>
+              </Button>
             </div>
-            <Button asChild variant="outline" size="lg" className="mt-1 w-full sm:w-[320px]">
-              <a href="/dns-access" target="_blank" rel="noopener noreferrer">
-                Open the DNS access guide
-                <ExternalLink />
-              </a>
-            </Button>
           </div>
         ) : null}
 
