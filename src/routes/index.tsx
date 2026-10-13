@@ -12,6 +12,8 @@ export const Route = createFileRoute("/")({
           "Start your Lead Genisys onboarding by completing the client intake form so we can build your lead generation system.",
       },
       { property: "og:title", content: "Step 1: Client Intake Form | Lead Genisys Onboarding" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content:
