@@ -96,7 +96,7 @@ const registrars: { name: string; steps: string[] }[] = [
     steps: [
       "Look in your account for anything named Users, Team, Members, Delegate Access, or Permissions.",
       `Invite ${DNS_ACCESS_EMAIL} with permission to manage DNS records.`,
-      "If there is no way to invite a user, message us in Slack — we'll send you the exact DNS records to paste in yourself, and we'll walk through it together on your launch call.",
+      "If there is no way to invite a user, message us in Slack — we'll send you the exact DNS records to paste in yourself, and we'll walk through it together in Slack.",
     ],
   },
 ];

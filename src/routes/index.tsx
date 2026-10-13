@@ -35,8 +35,9 @@ function Step1() {
             Please fill out this client intake form
           </h1>
           <p className="mx-auto max-w-2xl text-lg font-normal text-muted-foreground">
-            This gives our team everything needed to build your campaigns. Complete every field, then
-            continue to book your launch call.
+            This gives our team everything needed to build your campaigns. Complete every field, and
+            please don't rush through it — the detail you give us here is exactly what your campaigns
+            are built from.
           </p>
         </div>
 
