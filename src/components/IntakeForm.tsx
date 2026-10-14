@@ -1,6 +1,6 @@
 import { Fragment, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowBigDown, ArrowRight, ExternalLink, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ const emptyAnswers = Object.fromEntries(INTAKE_FIELDS.map((f) => [f.id, ""]));
 
 export default function IntakeForm() {
   const submit = useServerFn(submitIntake);
+  const navigate = useNavigate();
   const [answers, setAnswers] = useState<Record<string, string>>(emptyAnswers);
   const [files, setFiles] = useState<File[]>([]);
   const [cp575Files, setCp575Files] = useState<File[]>([]);
@@ -76,6 +77,7 @@ export default function IntakeForm() {
       const filePaths = await uploadFiles();
       await submit({ data: { answers: parsed.data.answers, filePaths } });
       setStatus("done");
+      void navigate({ to: "/step-2" });
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Something went wrong. Please try again.");
@@ -193,12 +195,12 @@ export default function IntakeForm() {
       <div className="mt-8 rounded-xl border bg-card p-8 text-center">
         <h2 className="text-xl font-medium text-ink">Thanks — your intake form is in.</h2>
         <p className="mx-auto mt-2 max-w-xl text-muted-foreground">
-          Our team has everything needed to start building. Next, join us on Slack.
+          Our team has everything needed to start building. Taking you to the next page…
         </p>
         <div className="mt-6 flex justify-center">
           <Button asChild variant="brand" size="lg" className="w-full sm:w-[320px]">
             <Link to="/step-2">
-              Continue to Step 2
+              Continue
               <ArrowRight />
             </Link>
           </Button>
