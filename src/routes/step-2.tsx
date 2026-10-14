@@ -1,25 +1,24 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
+import { createFileRoute } from "@tanstack/react-router";
 import OnboardingHeader from "@/components/OnboardingHeader";
 
-export const Route = createFileRoute("/step-3")({
+export const Route = createFileRoute("/step-2")({
   head: () => ({
     meta: [
       { title: "You're In | Lead Genisys Onboarding" },
       {
         name: "description",
-        content: "You're onboarded with Lead Genisys. Your team will reach out in your private Slack channel.",
+        content: "Welcome to Lead Genisys. Here's what happens next: your system build, launch call, and first leads.",
       },
       { property: "og:title", content: "You're In | Lead Genisys Onboarding" },
       {
         property: "og:description",
-        content: "You're onboarded with Lead Genisys. Your team will reach out in your private Slack channel.",
+        content: "Welcome to Lead Genisys. Here's what happens next: your system build, launch call, and first leads.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Step3,
+  component: Step2,
 });
 
 const checklist = [
@@ -28,25 +27,24 @@ const checklist = [
     body: "Our team is already working with the details and files you sent.",
   },
   {
-    title: "Watch your Slack channel",
-    body: "We'll post updates, questions and your launch timing there.",
+    title: "Launch call in 5 days",
+    body: "We'll meet in five days to walk you through your new marketing system.",
   },
   {
-    title: "Turn on Slack notifications",
-    body: "Install Slack on your phone so you don't miss a message from us.",
+    title: "Lead generation",
+    body: "Expect leads to start coming in from us after a few weeks.",
   },
 ];
 
-function Step3() {
+function Step2() {
   return (
     <div className="flex min-h-screen flex-col gradient-hero">
-      <OnboardingHeader current={3} />
+      <OnboardingHeader />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12">
         <div className="space-y-3 text-center">
-          <p className="text-sm text-primary">Last step</p>
           <h1 className="text-3xl font-medium tracking-tight text-ink md:text-4xl">You're in</h1>
           <p className="mx-auto max-w-2xl text-lg font-normal text-muted-foreground">
-            Welcome to Lead Genisys. Here's what happens next.
+            Welcome to Lead Genisys.
           </p>
         </div>
 
@@ -61,17 +59,6 @@ function Step3() {
             </li>
           ))}
         </ol>
-
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button asChild variant="outline" size="lg" className="w-full sm:w-[320px]">
-            <Link to="/step-2">Back</Link>
-          </Button>
-          <Button asChild variant="brand" size="lg" className="w-full sm:w-[320px]">
-            <a href="https://app.slack.com" target="_blank" rel="noreferrer">
-              Open Slack
-            </a>
-          </Button>
-        </div>
       </main>
     </div>
   );

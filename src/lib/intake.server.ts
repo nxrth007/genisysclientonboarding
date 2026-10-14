@@ -85,6 +85,40 @@ export async function recordIntakeSubmission({ answers, filePaths }: IntakeSubmi
     `/values/${SHEET_NAME}!A1:AZ1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
     { method: "POST", body: JSON.stringify({ values: [row] }) },
   );
-  const [, slack] = await Promise.all([sendIntakeWebhooks(payload), onboardToSlack(payload)]);
+  const [, slack] = await Promise.all([
+    sendIntakeWebhooks(payload),
+    onboardToSlack(payload),
+    addToClientTracker(answers).catch((error) =>
+      console.error("Could not add client to tracker sheet", error),
+    ),
+  ]);
   return { ok: true as const, payload, slack };
+}
+
+/** Client tracker sheet: Client Name | Business | Contact Email | Start Date (A–D). */
+const TRACKER_SPREADSHEET_ID = "1-xDJVi6HpntUJUWrZWi6rPTmDamyHytKi_aLttL-UU4";
+
+export function trackerStartDate(now: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  }).format(now);
+}
+
+async function addToClientTracker(answers: Record<string, string>) {
+  const row = [
+    answers["fullName"] ?? "",
+    answers["businessName"] ?? "",
+    answers["leadEmail"] ?? "",
+    trackerStartDate(new Date()),
+  ];
+  const res = await fetch(
+    `${GATEWAY}/spreadsheets/${TRACKER_SPREADSHEET_ID}/values/Sheet1!A:D:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+    { method: "POST", headers: gatewayHeaders(), body: JSON.stringify({ values: [row] }) },
+  );
+  if (!res.ok) {
+    throw new Error(`Tracker sheet append failed [${res.status}]: ${await res.text()}`);
+  }
 }
