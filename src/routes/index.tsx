@@ -30,7 +30,6 @@ function Step1() {
       <OnboardingHeader current={1} />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12">
         <div className="space-y-3 text-center">
-          <p className="text-sm text-primary">Step 1 of 3</p>
           <h1 className="text-3xl font-medium tracking-tight text-ink md:text-4xl">
             Please fill out this client intake form
           </h1>
