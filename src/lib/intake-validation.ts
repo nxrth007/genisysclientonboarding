@@ -34,7 +34,7 @@ const answersSchema = z.object(
 export const intakeSchema = z
   .object({
     answers: answersSchema,
-    filePaths: z.array(z.string().trim().min(1).max(500)).max(20),
+    filePaths: z.array(z.string().trim().min(1).max(500)).max(21),
   })
   .superRefine((data, ctx) => {
     for (const field of INTAKE_FIELDS) {
