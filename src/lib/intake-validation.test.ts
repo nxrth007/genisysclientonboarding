@@ -13,7 +13,10 @@ function baseAnswers() {
   );
 }
 
-function inputWithProfile(answer: string) {
+function inputWithProfile(answer: string): {
+  answers: Record<string, string>;
+  filePaths: string[];
+} {
   const answers = baseAnswers();
   answers["hasGoogleProfile"] = answer;
   return { answers, filePaths: [] };
