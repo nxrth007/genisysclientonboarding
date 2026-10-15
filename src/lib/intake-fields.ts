@@ -10,6 +10,9 @@ export type IntakeField = {
   requiredWhen?: { field: string; equals: string };
   /** Optional helper note shown under the label. */
   note?: string;
+  /** Shown in red under the label as a warning. */
+  alert?: string;
+
   /** Shown in a hover tooltip on the small "i" beside the required star. */
   help?: string;
   /** Can be left blank (shown as "optional" instead of the required star). */
@@ -32,7 +35,9 @@ export const INTAKE_FIELDS: IntakeField[] = [
     label: "Legal Business Name",
     type: "text",
     note: "Please note: this must be the legally registered business name exactly as it appears on your IRS CP-575 (EIN confirmation letter).",
+    alert: "Please check your CP-575 or any IRS document to verify your full legal business name",
   },
+
   { id: "businessContact", label: "Business Contact Information", type: "text" },
   { id: "businessAddress", label: "Business Address", type: "text" },
   {

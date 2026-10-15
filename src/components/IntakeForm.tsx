@@ -97,6 +97,10 @@ export default function IntakeForm() {
         {field.note ? (
           <p className="mt-1 text-sm text-muted-foreground">{field.note}</p>
         ) : null}
+        {field.alert ? (
+          <p className="mt-1 text-sm text-destructive">{field.alert}</p>
+        ) : null}
+
         {field.type === "textarea" ? (
           <textarea
             id={field.id}
