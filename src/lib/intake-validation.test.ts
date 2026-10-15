@@ -13,7 +13,10 @@ function baseAnswers() {
   );
 }
 
-function inputWithProfile(answer: string) {
+function inputWithProfile(answer: string): {
+  answers: Record<string, string>;
+  filePaths: string[];
+} {
   const answers = baseAnswers();
   answers["hasGoogleProfile"] = answer;
   return { answers, filePaths: [] };
@@ -52,5 +55,19 @@ describe("EIN", () => {
 
   it("accepts a filled EIN", () => {
     assert.equal(intakeSchema.safeParse(inputWithEin("12-3456789")).success, true);
+  });
+});
+
+describe("Uploaded files", () => {
+  it("accepts 20 marketing files plus one CP-575 (21 total)", () => {
+    const input = inputWithProfile("Yes");
+    input.filePaths = Array.from({ length: 21 }, (_, i) => `${i}/file.pdf`);
+    assert.equal(intakeSchema.safeParse(input).success, true);
+  });
+
+  it("rejects more than 21 files", () => {
+    const input = inputWithProfile("Yes");
+    input.filePaths = Array.from({ length: 22 }, (_, i) => `${i}/file.pdf`);
+    assert.equal(intakeSchema.safeParse(input).success, false);
   });
 });
