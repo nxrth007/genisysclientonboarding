@@ -19,6 +19,10 @@ export type IntakeField = {
   optional?: boolean;
   /** Starts a new section: a heading (and optional intro) shown above this question. */
   section?: { title: string; intro?: string };
+  /** The browser's autofill hint for the box ("name", "organization", "email", "tel"). */
+  autoComplete?: string;
+  /** Suggests real addresses as they type, and fills in the one they pick (AddressAutocomplete). */
+  addressLookup?: boolean;
 };
 
 export const INTAKE_FIELDS: IntakeField[] = [
@@ -29,22 +33,30 @@ export const INTAKE_FIELDS: IntakeField[] = [
     placeholder: "XX-XXXXXXX",
     help: "We use your EIN to register your business for A2P 10DLC text messaging compliance. Wireless carriers require a verified business identity before marketing texts can be delivered — without this registration, messages to potential clients get filtered or blocked.",
   },
-  { id: "fullName", label: "Full Name", type: "text" },
+  { id: "fullName", label: "Full Name", type: "text", autoComplete: "name" },
   {
     id: "businessName",
     label: "Legal Business Name",
     type: "text",
-    note: "Please note: this must be the legally registered business name exactly as it appears on your IRS CP-575 (EIN confirmation letter).",
+    autoComplete: "organization",
+    note: "Please note: this must be the legally registered business name exactly as it appears on your IRS CP-575 (EIN confirmation letter). Just the name: your address goes in Business Address below.",
     alert: "Please check your CP-575 or any IRS document to verify your full legal business name",
   },
 
   { id: "businessContact", label: "Business Contact Information", type: "text" },
-  { id: "businessAddress", label: "Business Address", type: "text" },
+  {
+    id: "businessAddress",
+    label: "Business Address",
+    type: "text",
+    addressLookup: true,
+    note: "Start typing, then pick your address from the list: the street address where the business is based, not a PO box.",
+  },
   {
     id: "customerPhone",
     label:
       "What is the best phone number for customers to reach you? (We will be setting up a tracking number that forwards here)",
     type: "text",
+    autoComplete: "tel",
   },
   {
     id: "areaCode",
@@ -56,6 +68,7 @@ export const INTAKE_FIELDS: IntakeField[] = [
     id: "leadEmail",
     label: "What is your best email for our lead communication?",
     type: "email",
+    autoComplete: "email",
   },
   { id: "cities", label: "What cities do you service?", type: "text" },
   {

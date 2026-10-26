@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { hasAddressNumber, looksLikeAddress } from "./address-check";
 import { INTAKE_FIELDS } from "./intake-fields";
 
 function fieldSchema(field: (typeof INTAKE_FIELDS)[number]) {
@@ -48,6 +49,26 @@ export const intakeSchema = z
           message: "This field is required",
         });
       }
+    }
+    // Name and address in the wrong boxes: clients have put their address
+    // in "Legal Business Name" and their business name in "Business Address".
+    const name = data.answers["businessName"] ?? "";
+    if (looksLikeAddress(name)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["answers", "businessName"],
+        message:
+          "That looks like an address. Put your business's legal name here; your address goes in Business Address below.",
+      });
+    }
+    const address = data.answers["businessAddress"] ?? "";
+    if (address.trim() && !hasAddressNumber(address)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["answers", "businessAddress"],
+        message:
+          "Enter the street address with its number, e.g. 123 Main St, Austin, TX 78701. Start typing and pick it from the list.",
+      });
     }
   });
 

@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowBigDown, ArrowRight, ExternalLink, Info } from "lucide-react";
 
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -109,12 +110,20 @@ export default function IntakeForm() {
             onChange={(e) => setAnswer(field.id, e.target.value)}
             className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
+        ) : field.addressLookup ? (
+          <AddressAutocomplete
+            id={field.id}
+            value={answers[field.id] ?? ""}
+            onChange={(value) => setAnswer(field.id, value)}
+            className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
         ) : (
           <input
             id={field.id}
             type={field.type}
             value={answers[field.id] ?? ""}
             onChange={(e) => setAnswer(field.id, e.target.value)}
+            autoComplete={field.autoComplete}
             className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
         )}
