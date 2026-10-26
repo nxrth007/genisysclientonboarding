@@ -36,6 +36,8 @@ export default function AddressAutocomplete({
   const session = useRef<string>("");
   // Only typing looks things up; picking a suggestion sets the value without a new lookup.
   const typed = useRef(false);
+  // A lookup that answers after they've moved on mustn't open the list under the next question.
+  const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!typed.current) return;
@@ -57,7 +59,7 @@ export default function AddressAutocomplete({
         const list = Array.isArray(data.suggestions) ? data.suggestions : [];
         setSuggestions(list);
         setActive(-1);
-        setOpen(list.length > 0);
+        setOpen(list.length > 0 && document.activeElement === input.current);
       } catch {
         // Aborted by the next keystroke, or the lookup is down: plain typing still works.
       }
@@ -107,6 +109,7 @@ export default function AddressAutocomplete({
   return (
     <div className="relative">
       <input
+        ref={input}
         id={id}
         type="text"
         value={value}
