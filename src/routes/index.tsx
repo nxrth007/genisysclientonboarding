@@ -4,7 +4,7 @@ import IntakeForm from "@/components/IntakeForm";
 import CheckoutGate from "@/components/CheckoutGate";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>): { session_id?: string } => ({ session_id: typeof search["session_id"] === "string" ? search["session_id"] : undefined }),
+  validateSearch: (search: Record<string, unknown>): { session_id?: string } => (typeof search["session_id"] === "string" ? { session_id: search["session_id"] } : {}),
   head: () => ({
     meta: [
       { title: "Step 1: Client Intake Form | Lead Genisys Onboarding" },
