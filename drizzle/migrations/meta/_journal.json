@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794520640578,
+      "tag": "0000_checkout_onboarding_submission_uniqueness",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794520710690,
+      "tag": "0001_scope_checkout_uploads_to_confirmed_customers",
+      "breakpoints": true
+    }
+  ]
+}
