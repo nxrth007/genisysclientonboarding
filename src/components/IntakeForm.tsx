@@ -24,7 +24,7 @@ import { intakeSchema } from "@/lib/intake-validation";
 
 const emptyAnswers = Object.fromEntries(INTAKE_FIELDS.map((f) => [f.id, ""]));
 
-export default function IntakeForm() {
+export default function IntakeForm({ sessionId, verifiedEmail }: { sessionId: string; verifiedEmail: string }) {
   const submit = useServerFn(submitIntake);
   const navigate = useNavigate();
   const [answers, setAnswers] = useState<Record<string, string>>(emptyAnswers);
@@ -38,7 +38,9 @@ export default function IntakeForm() {
     setAnswers((prev) => ({ ...prev, [id]: value }));
 
   async function uploadFiles(): Promise<string[]> {
-    const prefix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) throw new Error("Please confirm your checkout email before submitting.");
+    const prefix = `${data.user.id}/${sessionId}/${crypto.randomUUID()}`;
     const paths: string[] = [];
     for (const file of files) {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -76,7 +78,7 @@ export default function IntakeForm() {
     setStatus("saving");
     try {
       const filePaths = await uploadFiles();
-      await submit({ data: { answers: parsed.data.answers, filePaths } });
+      await submit({ data: { answers: parsed.data.answers, filePaths, sessionId } });
       setStatus("done");
       void navigate({ to: "/step-2" });
     } catch (error) {
