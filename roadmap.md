@@ -1,7 +1,7 @@
 # Task Roadmap
 
 ## Checkout onboarding
-- [ ] Add server-only shared-key verification and test secured endpoint responses; requires the matching saved key
+- [x] Add server-only shared-key verification; live missing/wrong keys return 401 and saved key passes auth to invalid-session rejection
 - [ ] Confirm successful real sandbox verification; requires a completed sandbox Checkout Session ID
 - [x] Restore public form; confirm identity only before acceptance
 - [x] Match returning confirmed emails against existing client tracker; verified tracker email column access
@@ -12,7 +12,7 @@
 - [x] Enforce one submission per session in private database storage; database duplicate insert rejected
 - [x] Automated validation tests and desktop/mobile form access for missing/invalid sessions
 - [ ] End-to-end valid/reused sandbox checkout with email confirmation and fulfillment — requires a completed sandbox checkout URL
-- [ ] Secure external verifier before publishing — its public endpoint exposes checkout customer details; change must happen in checkout project
+- [x] Secure external verifier — inspected updated checkout source and verified unauthorized requests return 401
 - [ ] Verify hosted email confirmation delivery, returning customer draft read-back and submission — no auth users exist to test; a customer must confirm an email first
 
 ## Done

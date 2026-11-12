@@ -48,6 +48,10 @@ describe("Checkout safeguards", () => {
   it("rejects a failed verification endpoint response", async () => {
     await assert.rejects(verifyCheckout("cs_test_InvalidExample", async () => Response.json({ valid: false }, { status: 404 })));
   });
+  it("accepts the secured endpoint's minimal verified response without livemode", async () => {
+    const result = await verifyCheckout("cs_test_SandboxExample", async () => Response.json({ valid: true, email: "customer@example.com", subscription_status: "trialing" }));
+    assert.equal(result.email, "customer@example.com");
+  });
   it("rejects unconfirmed trials and live endpoint results", () => {
     for (const value of [{ ...verified, valid: false }, { ...verified, livemode: true }, { ...verified, subscription_status: "canceled" }]) {
       assert.throws(() => parseVerifiedCheckout(value));
