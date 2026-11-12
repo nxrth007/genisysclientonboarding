@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      checkout_onboarding_submissions: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          created_at: string
+          file_paths: Json
+          session_id: string
+          status: string
+          user_id: string
+          verified_email: string
+        }
+        Insert: {
+          answers: Json
+          completed_at?: string | null
+          created_at?: string
+          file_paths?: Json
+          session_id: string
+          status?: string
+          user_id: string
+          verified_email: string
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          created_at?: string
+          file_paths?: Json
+          session_id?: string
+          status?: string
+          user_id?: string
+          verified_email?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

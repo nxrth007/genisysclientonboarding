@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794520640578,
+      "tag": "0000_checkout_onboarding_submission_uniqueness",
+      "breakpoints": true
+    }
+  ]
+}
