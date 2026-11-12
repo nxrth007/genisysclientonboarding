@@ -4,7 +4,7 @@ import IntakeForm from "@/components/IntakeForm";
 import CheckoutGate from "@/components/CheckoutGate";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>) => ({ session_id: typeof search["session_id"] === "string" ? search["session_id"] : "" }),
+  validateSearch: (search: Record<string, unknown>): { session_id?: string } => ({ session_id: typeof search["session_id"] === "string" ? search["session_id"] : undefined }),
   head: () => ({
     meta: [
       { title: "Step 1: Client Intake Form | Lead Genisys Onboarding" },
@@ -32,7 +32,7 @@ function Step1() {
     <div className="flex min-h-screen flex-col gradient-hero">
       <OnboardingHeader current={1} />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12">
-        <CheckoutGate sessionId={session_id}>{(email) => <>
+        <CheckoutGate sessionId={session_id ?? ""}>{(email) => <>
         <div className="space-y-3 text-center">
           <h1 className="text-3xl font-medium tracking-tight text-ink md:text-4xl">
             Please fill out this client intake form
@@ -44,7 +44,7 @@ function Step1() {
           </p>
         </div>
 
-        <IntakeForm sessionId={session_id} verifiedEmail={email} />
+        <IntakeForm sessionId={session_id ?? ""} verifiedEmail={email} />
         </>}</CheckoutGate>
       </main>
     </div>
