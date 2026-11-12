@@ -19,6 +19,7 @@ export type Database = {
           answers: Json
           completed_at: string | null
           created_at: string
+          customer_email: string | null
           file_paths: Json
           session_id: string
           status: string
@@ -29,6 +30,7 @@ export type Database = {
           answers: Json
           completed_at?: string | null
           created_at?: string
+          customer_email?: string | null
           file_paths?: Json
           session_id: string
           status?: string
@@ -39,9 +41,34 @@ export type Database = {
           answers?: Json
           completed_at?: string | null
           created_at?: string
+          customer_email?: string | null
           file_paths?: Json
           session_id?: string
           status?: string
+          user_id?: string
+          verified_email?: string
+        }
+        Relationships: []
+      }
+      onboarding_drafts: {
+        Row: {
+          answers: Json
+          session_id: string | null
+          updated_at: string
+          user_id: string
+          verified_email: string
+        }
+        Insert: {
+          answers?: Json
+          session_id?: string | null
+          updated_at?: string
+          user_id: string
+          verified_email: string
+        }
+        Update: {
+          answers?: Json
+          session_id?: string | null
+          updated_at?: string
           user_id?: string
           verified_email?: string
         }

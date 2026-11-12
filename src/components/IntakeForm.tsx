@@ -1,4 +1,5 @@
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowBigDown, ArrowRight, ExternalLink, Info } from "lucide-react";
@@ -21,26 +22,126 @@ import {
 } from "@/lib/intake-fields";
 import { submitIntake } from "@/lib/intake.functions";
 import { intakeSchema } from "@/lib/intake-validation";
+import { checkCheckout } from "@/lib/checkout.functions";
+import { getCustomerAccess, saveCustomerDraft } from "@/lib/customer.functions";
 
 const emptyAnswers = Object.fromEntries(INTAKE_FIELDS.map((f) => [f.id, ""]));
+function restoreAnswers(value: unknown): Record<string, string> {
+  const record = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  return Object.fromEntries(INTAKE_FIELDS.map((field) => {
+    const answer = record[field.id];
+    return [field.id, typeof answer === "string" ? answer : ""];
+  }));
+}
 
-export default function IntakeForm({ sessionId, verifiedEmail }: { sessionId: string; verifiedEmail: string }) {
+export default function IntakeForm({ sessionId }: { sessionId: string }) {
   const submit = useServerFn(submitIntake);
+  const check = useServerFn(checkCheckout);
+  const access = useServerFn(getCustomerAccess);
+  const saveDraft = useServerFn(saveCustomerDraft);
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [answers, setAnswers] = useState<Record<string, string>>({ ...emptyAnswers, leadEmail: verifiedEmail });
+  const [answers, setAnswers] = useState<Record<string, string>>(emptyAnswers);
   const [files, setFiles] = useState<File[]>([]);
   const [cp575Files, setCp575Files] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [accountEmail, setAccountEmail] = useState("");
+  const [verifiedEmail, setVerifiedEmail] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [sendingLink, setSendingLink] = useState(false);
+  const [identityMessage, setIdentityMessage] = useState("");
+  const [checkoutMessage, setCheckoutMessage] = useState("");
+  const [draftReady, setDraftReady] = useState(false);
+  const edited = useRef(false);
+  const draftKey = `lead-genisys-intake:${sessionId || "returning"}`;
 
-  const setAnswer = (id: string, value: string) =>
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(draftKey);
+      if (stored) {
+        const draft = JSON.parse(stored) as Record<string, unknown>;
+        setAnswers(restoreAnswers(draft));
+        edited.current = true;
+      }
+    } catch { /* Draft storage is optional. */ }
+    setDraftReady(true);
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (!draftReady || status === "done") return;
+    try { sessionStorage.setItem(draftKey, JSON.stringify(answers)); } catch { /* Storage may be disabled. */ }
+  }, [answers, draftKey, draftReady, status]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    let active = true;
+    setCheckoutMessage("Confirming your checkout…");
+    void check({ data: sessionId }).then((result) => {
+      if (active) setCheckoutMessage(result.valid ? "" : "We couldn't confirm this checkout link. You can still fill out the form; contact our team before submitting.");
+    }).catch(() => {
+      if (active) setCheckoutMessage("We couldn't confirm this checkout link. Contact our team if you need help.");
+    });
+    return () => { active = false; };
+  }, [check, sessionId]);
+
+  useEffect(() => {
+    let active = true;
+    async function restoreIdentity() {
+      const { data } = await supabase.auth.getUser();
+      if (!active) return;
+      if (!data.user) { setVerifiedEmail(""); return; }
+      setConfirming(true);
+      try {
+        const result = await access({ data: sessionId });
+        if (!active) return;
+        setVerifiedEmail(result.email);
+        setAccountEmail(result.email);
+        setIdentityMessage("");
+        if (!edited.current) {
+          setAnswers({ ...restoreAnswers(result.draft), leadEmail: result.email });
+        } else {
+          setAnswers((prev) => ({ ...prev, leadEmail: prev["leadEmail"] || result.email }));
+        }
+      } catch (error) {
+        if (active) { setVerifiedEmail(""); setIdentityMessage(error instanceof Error ? error.message : "We couldn't confirm your account. Please contact our team."); }
+      } finally { if (active) setConfirming(false); }
+    }
+    void restoreIdentity();
+    const refreshIdentity = () => { void restoreIdentity(); };
+    window.addEventListener("lead-genisys-auth-change", refreshIdentity);
+    return () => { active = false; window.removeEventListener("lead-genisys-auth-change", refreshIdentity); };
+  }, [access, sessionId]);
+
+  async function sendConfirmation() {
+    if (!accountEmail.trim()) { setIdentityMessage("Enter the email associated with your Lead Genisys account."); return; }
+    setSendingLink(true);
+    try {
+      const redirect = new URL("/", window.location.origin);
+      if (sessionId) redirect.searchParams.set("session_id", sessionId);
+      const { error } = await supabase.auth.signInWithOtp({ email: accountEmail.trim(), options: { emailRedirectTo: redirect.href } });
+      setIdentityMessage(error ? "We couldn't send your confirmation email. Please try again shortly or contact our team." : "Check your inbox for the confirmation link. After confirming, return to this tab — your answers are still here.");
+    } catch { setIdentityMessage("We couldn't send your confirmation email. Please contact our team."); }
+    finally { setSendingLink(false); }
+  }
+
+  async function saveProgress() {
+    try {
+      await saveDraft({ data: { sessionId, answers } });
+      setIdentityMessage("Your answers are saved. Reattach your files when you return.");
+    } catch (error) { setIdentityMessage(error instanceof Error ? error.message : "We couldn't save your progress."); }
+  }
+
+  const setAnswer = (id: string, value: string) => {
+    edited.current = true;
     setAnswers((prev) => ({ ...prev, [id]: value }));
+  };
 
   async function uploadFiles(): Promise<string[]> {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw new Error("Please confirm your checkout email before submitting.");
-    const prefix = `${data.user.id}/${sessionId}/${crypto.randomUUID()}`;
+    const prefix = `${data.user.id}/${sessionId || "returning"}/${crypto.randomUUID()}`;
     const paths: string[] = [];
     for (const file of files) {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -75,11 +176,20 @@ export default function IntakeForm({ sessionId, verifiedEmail }: { sessionId: st
       return;
     }
     setErrors({});
+    if (!verifiedEmail) {
+      setStatus("idle");
+      setIdentityMessage("Please confirm your account email below before submitting. You don't need to purchase again.");
+      setAccountEmail((prev) => prev || answers["leadEmail"] || "");
+      return;
+    }
     setStatus("saving");
     try {
+      await saveDraft({ data: { sessionId, answers: parsed.data.answers } });
       const filePaths = await uploadFiles();
       await submit({ data: { answers: parsed.data.answers, filePaths, sessionId } });
       setStatus("done");
+      try { sessionStorage.removeItem(draftKey); } catch { /* optional storage */ }
+      queryClient.removeQueries({ queryKey: ["checkout-owner"] });
       void navigate({ to: "/step-2" });
     } catch (error) {
       setStatus("error");
@@ -226,6 +336,7 @@ export default function IntakeForm({ sessionId, verifiedEmail }: { sessionId: st
 
   return (
     <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+      {checkoutMessage ? <p className="text-sm text-muted-foreground" role="status">{checkoutMessage}</p> : null}
       {FIELDS_BEFORE_FILES.map((field) => (
         <Fragment key={field.id}>
           {field.section ? <SectionHeading section={field.section} /> : null}
@@ -289,6 +400,23 @@ export default function IntakeForm({ sessionId, verifiedEmail }: { sessionId: st
       ))}
 
       {message ? <p className="text-sm text-destructive">{message}</p> : null}
+
+      <div className="border-t pt-6 space-y-3">
+        {verifiedEmail ? <>
+          <p className="text-sm text-muted-foreground">Account email confirmed: {verifiedEmail}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={() => { void saveProgress(); }}>Save progress</Button>
+            <Button type="button" variant="link" onClick={async () => { await supabase.auth.signOut(); setVerifiedEmail(""); }}>Use a different account email</Button>
+          </div>
+        </> : <>
+          <label htmlFor="account-email" className="block text-base font-normal text-ink">Confirm your Lead Genisys account email</label>
+          <p className="text-sm text-muted-foreground">Use the email you signed up with. No password or new purchase needed.</p>
+          <input id="account-email" type="email" autoComplete="email" value={accountEmail} onChange={(event) => setAccountEmail(event.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+          <Button type="button" variant="outline" disabled={sendingLink || confirming} onClick={() => { void sendConfirmation(); }}>{confirming ? "Checking your account…" : sendingLink ? "Sending…" : "Send confirmation link"}</Button>
+        </>}
+        {identityMessage ? <p className="text-sm text-muted-foreground" role="status">{identityMessage}</p> : null}
+        <Button asChild variant="link" className="px-0"><a href="mailto:alex@leadgenisys.com">Need help? Contact Lead Genisys</a></Button>
+      </div>
 
       <div className="flex justify-center">
         <Button

@@ -12,7 +12,7 @@ export async function verifyCheckout(sessionId: string, fetcher: typeof fetch = 
     redirect: "error",
     cache: "no-store",
   });
-  if (!response.ok) throw new Error("We couldn't confirm your trial. Please return to the trial page.");
+  if (!response.ok) throw new Error("We couldn't confirm this checkout. Please contact the Lead Genisys team; you don't need to purchase again.");
   return parseVerifiedCheckout(await response.json());
 }
 
