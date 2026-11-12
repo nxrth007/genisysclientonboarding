@@ -4,16 +4,23 @@ const VERIFY_URL = "https://qlviirvjbiopltrqucej.supabase.co/functions/v1/verify
 
 export async function verifyCheckout(sessionId: string, fetcher: typeof fetch = fetch) {
   const id = checkoutSessionSchema.parse(sessionId);
-  const response = await fetcher(VERIFY_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ session_id: id }),
-    signal: AbortSignal.timeout(15000),
-    redirect: "error",
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error("We couldn't confirm this checkout. Please contact the Lead Genisys team; you don't need to purchase again.");
-  return parseVerifiedCheckout(await response.json());
+  // Read only during server execution; never return or log credentials/provider errors.
+  const key = process.env["ONBOARDING_VERIFICATION_KEY"];
+  if (!key) throw new Error("Checkout confirmation is temporarily unavailable. Please contact the Lead Genisys team; you don't need to purchase again.");
+  try {
+    const response = await fetcher(VERIFY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-onboarding-key": key },
+      body: JSON.stringify({ session_id: id }),
+      signal: AbortSignal.timeout(15000),
+      redirect: "error",
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error("Verification failed");
+    return parseVerifiedCheckout(await response.json());
+  } catch {
+    throw new Error("We couldn't confirm this checkout. Please contact the Lead Genisys team; you don't need to purchase again.");
+  }
 }
 
 export async function verifyOwnedCheckout(sessionId: string, userId: string) {
