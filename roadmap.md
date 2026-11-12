@@ -1,17 +1,17 @@
 # Task Roadmap
 
 ## Checkout onboarding
-- [ ] Restore public form; confirm identity only before acceptance
-- [ ] Match returning confirmed emails against existing client tracker
-- [ ] Add customer-level duplicate protection and private resumable drafts
-- [ ] Verify public form, confirmation flow and authorization rules
+- [x] Restore public form; confirm identity only before acceptance
+- [x] Match returning confirmed emails against existing client tracker; verified tracker email column access
+- [x] Add customer-level duplicate protection and private resumable drafts; duplicate customer insert rejected
+- [x] Verify public form, pre-confirmation submission block, draft reload and 24 authorization/intake tests
 - [x] Review verification endpoint authentication and privacy
-- [x] Gate form and reverify at submission; use verified customer email
+- [x] Verify checkout unobtrusively and reverify at submission; use verified customer email
 - [x] Enforce one submission per session in private database storage; database duplicate insert rejected
-- [x] Automated validation tests and desktop/mobile missing/invalid session checks
+- [x] Automated validation tests and desktop/mobile form access for missing/invalid sessions
 - [ ] End-to-end valid/reused sandbox checkout with email confirmation and fulfillment — requires a completed sandbox checkout URL
 - [ ] Secure external verifier before publishing — its public endpoint exposes checkout customer details; change must happen in checkout project
-- [ ] Verify hosted email confirmation delivery and redirect allowlist — hosted settings and a real email confirmation flow not verified
+- [ ] Verify hosted email confirmation delivery, returning customer draft read-back and submission — no auth users exist to test; a customer must confirm an email first
 
 ## Done
 - [x] Label CP-575 upload optional but strongly encouraged; limit Google Business Profile answers to Yes/No and test validation
