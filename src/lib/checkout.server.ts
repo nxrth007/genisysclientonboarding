@@ -1,0 +1,33 @@
+import { checkoutSessionSchema, parseVerifiedCheckout, assertCheckoutOwner } from "./checkout-validation";
+
+const VERIFY_URL = "https://qlviirvjbiopltrqucej.supabase.co/functions/v1/verify-checkout-session";
+
+export async function verifyCheckout(sessionId: string, fetcher: typeof fetch = fetch) {
+  const id = checkoutSessionSchema.parse(sessionId);
+  const response = await fetcher(VERIFY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: id }),
+    signal: AbortSignal.timeout(15000),
+    redirect: "error",
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error("We couldn't confirm your trial. Please return to the trial page.");
+  return parseVerifiedCheckout(await response.json());
+}
+
+export async function verifyOwnedCheckout(sessionId: string, userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+  if (error || !data.user) throw new Error("Please confirm your checkout email to continue.");
+  const checkout = await verifyCheckout(sessionId);
+  assertCheckoutOwner(checkout.email, data.user.email, data.user.email_confirmed_at);
+  return checkout;
+}
+
+export async function assertUnusedCheckout(sessionId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.from("checkout_onboarding_submissions").select("session_id").eq("session_id", sessionId).maybeSingle();
+  if (error) throw new Error("We couldn't check your onboarding. Please try again later.");
+  if (data) throw new Error("This trial's onboarding has already been received. Please contact the Lead Genisys team if you need help.");
+}
