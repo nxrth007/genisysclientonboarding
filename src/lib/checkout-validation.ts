@@ -5,7 +5,9 @@ export const checkoutSessionSchema = z.string().regex(/^cs_test_[A-Za-z0-9]+$/).
 const verificationSchema = z.object({
   valid: z.literal(true),
   email: z.string().email(),
-  livemode: z.literal(false),
+  // The secured endpoint omits livemode; callers already require cs_test_ IDs.
+  // If a provider supplies livemode, explicitly reject true.
+  livemode: z.literal(false).optional(),
   subscription_status: z.enum(["trialing", "active"]),
 });
 

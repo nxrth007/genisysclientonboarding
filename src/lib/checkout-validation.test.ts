@@ -1,4 +1,4 @@
-import { describe, it } from "node:test";
+import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { checkoutSessionSchema, parseVerifiedCheckout, assertCheckoutOwner, bindCheckoutEmail } from "./checkout-validation";
 import { verifyCheckout } from "./checkout.server";
@@ -6,6 +6,12 @@ import { verifyCheckout } from "./checkout.server";
 const verified = { valid: true, email: "customer@example.com", livemode: false, subscription_status: "trialing" };
 
 describe("Checkout safeguards", () => {
+  const originalKey = process.env["ONBOARDING_VERIFICATION_KEY"];
+  before(() => { process.env["ONBOARDING_VERIFICATION_KEY"] = "test-only-verification-key"; });
+  after(() => {
+    if (originalKey === undefined) delete process.env["ONBOARDING_VERIFICATION_KEY"];
+    else process.env["ONBOARDING_VERIFICATION_KEY"] = originalKey;
+  });
   it("rejects a missing session ID", () => {
     assert.equal(checkoutSessionSchema.safeParse("").success, false);
   });
@@ -13,11 +19,38 @@ describe("Checkout safeguards", () => {
     for (const value of ["invalid", "cs_live_123", "cs_test_"]) assert.equal(checkoutSessionSchema.safeParse(value).success, false);
   });
   it("accepts a sandbox session with a verified active trial", async () => {
-    const result = await verifyCheckout("cs_test_SandboxExample", async () => Response.json(verified));
+    const result = await verifyCheckout("cs_test_SandboxExample", async (url, options) => {
+      assert.equal(url, "https://qlviirvjbiopltrqucej.supabase.co/functions/v1/verify-checkout-session");
+      assert.equal(options?.method, "POST");
+      assert.equal(new Headers(options?.headers).get("Content-Type"), "application/json");
+      assert.equal(new Headers(options?.headers).get("x-onboarding-key") === process.env["ONBOARDING_VERIFICATION_KEY"], true);
+      assert.deepEqual(JSON.parse(String(options?.body)), { session_id: "cs_test_SandboxExample" });
+      assert.equal(options?.redirect, "error");
+      assert.equal(options?.cache, "no-store");
+      return Response.json(verified);
+    });
     assert.equal(result.email, "customer@example.com");
+  });
+  it("rejects incorrect keys without exposing provider responses", async () => {
+    await assert.rejects(verifyCheckout("cs_test_SandboxExample", async () => Response.json({ error: "private-provider-detail" }, { status: 401 })), /We couldn't confirm this checkout/);
+  });
+  it("does not contact the endpoint when the server key is missing", async () => {
+    delete process.env["ONBOARDING_VERIFICATION_KEY"];
+    let contacted = false;
+    try {
+      await assert.rejects(verifyCheckout("cs_test_SandboxExample", async () => { contacted = true; return Response.json(verified); }), /temporarily unavailable/);
+      assert.equal(contacted, false);
+    } finally { process.env["ONBOARDING_VERIFICATION_KEY"] = "test-only-verification-key"; }
+  });
+  it("hides transport error details", async () => {
+    await assert.rejects(verifyCheckout("cs_test_SandboxExample", async () => { throw new Error("private-transport-detail"); }), /We couldn't confirm this checkout/);
   });
   it("rejects a failed verification endpoint response", async () => {
     await assert.rejects(verifyCheckout("cs_test_InvalidExample", async () => Response.json({ valid: false }, { status: 404 })));
+  });
+  it("accepts the secured endpoint's minimal verified response without livemode", async () => {
+    const result = await verifyCheckout("cs_test_SandboxExample", async () => Response.json({ valid: true, email: "customer@example.com", subscription_status: "trialing" }));
+    assert.equal(result.email, "customer@example.com");
   });
   it("rejects unconfirmed trials and live endpoint results", () => {
     for (const value of [{ ...verified, valid: false }, { ...verified, livemode: true }, { ...verified, subscription_status: "canceled" }]) {
