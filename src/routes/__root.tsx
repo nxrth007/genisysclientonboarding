@@ -124,7 +124,8 @@ function RootComponent() {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (!["SIGNED_IN", "SIGNED_OUT", "USER_UPDATED"].includes(event)) return;
       void router.invalidate();
-      void queryClient.invalidateQueries({ queryKey: ["checkout-owner"] });
+      setTimeout(() => window.dispatchEvent(new Event("lead-genisys-auth-change")), 0);
+      if (event !== "SIGNED_OUT") void queryClient.invalidateQueries();
     });
     return () => data.subscription.unsubscribe();
   }, [queryClient, router]);

@@ -26,6 +26,13 @@ import { checkCheckout } from "@/lib/checkout.functions";
 import { getCustomerAccess, saveCustomerDraft } from "@/lib/customer.functions";
 
 const emptyAnswers = Object.fromEntries(INTAKE_FIELDS.map((f) => [f.id, ""]));
+function restoreAnswers(value: unknown): Record<string, string> {
+  const record = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  return Object.fromEntries(INTAKE_FIELDS.map((field) => {
+    const answer = record[field.id];
+    return [field.id, typeof answer === "string" ? answer : ""];
+  }));
+}
 
 export default function IntakeForm({ sessionId }: { sessionId: string }) {
   const submit = useServerFn(submitIntake);
@@ -55,7 +62,7 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
       const stored = sessionStorage.getItem(draftKey);
       if (stored) {
         const draft = JSON.parse(stored) as Record<string, unknown>;
-        setAnswers(Object.fromEntries(INTAKE_FIELDS.map((field) => [field.id, typeof draft[field.id] === "string" ? draft[field.id] : ""])));
+        setAnswers(restoreAnswers(draft));
         edited.current = true;
       }
     } catch { /* Draft storage is optional. */ }
@@ -93,8 +100,7 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
         setAccountEmail(result.email);
         setIdentityMessage("");
         if (!edited.current) {
-          const saved = result.draft && typeof result.draft === "object" && !Array.isArray(result.draft) ? result.draft : {};
-          setAnswers(Object.fromEntries(INTAKE_FIELDS.map((field) => [field.id, field.id === "leadEmail" ? result.email : typeof saved[field.id] === "string" ? saved[field.id] : ""])));
+          setAnswers({ ...restoreAnswers(result.draft), leadEmail: result.email });
         } else {
           setAnswers((prev) => ({ ...prev, leadEmail: prev["leadEmail"] || result.email }));
         }
@@ -103,10 +109,9 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
       } finally { if (active) setConfirming(false); }
     }
     void restoreIdentity();
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (["SIGNED_IN", "SIGNED_OUT", "USER_UPDATED"].includes(event)) setTimeout(() => { void restoreIdentity(); }, 0);
-    });
-    return () => { active = false; data.subscription.unsubscribe(); };
+    const refreshIdentity = () => { void restoreIdentity(); };
+    window.addEventListener("lead-genisys-auth-change", refreshIdentity);
+    return () => { active = false; window.removeEventListener("lead-genisys-auth-change", refreshIdentity); };
   }, [access, sessionId]);
 
   async function sendConfirmation() {
