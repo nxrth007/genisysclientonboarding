@@ -1,6 +1,8 @@
 # Task Roadmap
 
 ## Checkout onboarding
+- [ ] Add server-only shared-key verification and test secured endpoint responses; requires the matching saved key
+- [ ] Confirm successful real sandbox verification; requires a completed sandbox Checkout Session ID
 - [x] Restore public form; confirm identity only before acceptance
 - [x] Match returning confirmed emails against existing client tracker; verified tracker email column access
 - [x] Add customer-level duplicate protection and private resumable drafts; duplicate customer insert rejected
