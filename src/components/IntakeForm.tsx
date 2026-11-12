@@ -27,7 +27,7 @@ const emptyAnswers = Object.fromEntries(INTAKE_FIELDS.map((f) => [f.id, ""]));
 export default function IntakeForm({ sessionId, verifiedEmail }: { sessionId: string; verifiedEmail: string }) {
   const submit = useServerFn(submitIntake);
   const navigate = useNavigate();
-  const [answers, setAnswers] = useState<Record<string, string>>(emptyAnswers);
+  const [answers, setAnswers] = useState<Record<string, string>>({ ...emptyAnswers, leadEmail: verifiedEmail });
   const [files, setFiles] = useState<File[]>([]);
   const [cp575Files, setCp575Files] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
