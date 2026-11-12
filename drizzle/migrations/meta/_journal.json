@@ -15,6 +15,13 @@
       "when": 1794520710690,
       "tag": "0001_scope_checkout_uploads_to_confirmed_customers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794521306467,
+      "tag": "0002_returning_customer_drafts_and_unique_email",
+      "breakpoints": true
     }
   ]
 }
