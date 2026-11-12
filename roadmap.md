@@ -1,6 +1,10 @@
 # Task Roadmap
 
 ## Checkout onboarding
+- [ ] Restore public form; confirm identity only before acceptance
+- [ ] Match returning confirmed emails against existing client tracker
+- [ ] Add customer-level duplicate protection and private resumable drafts
+- [ ] Verify public form, confirmation flow and authorization rules
 - [x] Review verification endpoint authentication and privacy
 - [x] Gate form and reverify at submission; use verified customer email
 - [x] Enforce one submission per session in private database storage; database duplicate insert rejected
