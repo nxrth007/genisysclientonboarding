@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import OnboardingHeader from "@/components/OnboardingHeader";
 import IntakeForm from "@/components/IntakeForm";
-import CheckoutGate from "@/components/CheckoutGate";
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): { session_id?: string } => (typeof search["session_id"] === "string" ? { session_id: search["session_id"] } : {}),
@@ -32,7 +31,6 @@ function Step1() {
     <div className="flex min-h-screen flex-col gradient-hero">
       <OnboardingHeader current={1} />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12">
-        <CheckoutGate sessionId={session_id ?? ""}>{(email) => <>
         <div className="space-y-3 text-center">
           <h1 className="text-3xl font-medium tracking-tight text-ink md:text-4xl">
             Please fill out this client intake form
@@ -44,8 +42,7 @@ function Step1() {
           </p>
         </div>
 
-        <IntakeForm sessionId={session_id ?? ""} verifiedEmail={email} />
-        </>}</CheckoutGate>
+        <IntakeForm sessionId={session_id ?? ""} />
       </main>
     </div>
   );
