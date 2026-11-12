@@ -3,7 +3,7 @@ import { setResponseHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import { intakeSchema } from "./intake-validation";
-import { checkoutSessionSchema } from "./checkout-validation";
+import { optionalCheckoutSessionSchema } from "./customer.functions";
 import { submitCheckoutIntake } from "./checkout-submission.server";
 
 export const submitIntake = createServerFn({ method: "POST" })
@@ -16,8 +16,8 @@ export const submitIntake = createServerFn({ method: "POST" })
       );
     }
     const raw = data as Record<string, unknown>;
-    const sessionId = checkoutSessionSchema.safeParse(raw["sessionId"]);
-    if (!sessionId.success) throw new Error("Please return to the trial page to confirm your checkout.");
+    const sessionId = optionalCheckoutSessionSchema.safeParse(raw["sessionId"] ?? "");
+    if (!sessionId.success) throw new Error("We couldn't confirm this checkout link. Please contact the Lead Genisys team.");
     return { ...parsed.data, sessionId: sessionId.data };
   })
   .handler(async ({ data, context }) => {

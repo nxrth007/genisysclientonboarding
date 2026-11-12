@@ -11,7 +11,7 @@ const verificationSchema = z.object({
 
 export function parseVerifiedCheckout(value: unknown) {
   const parsed = verificationSchema.safeParse(value);
-  if (!parsed.success) throw new Error("We couldn't confirm your trial. Please return to the trial page.");
+  if (!parsed.success) throw new Error("We couldn't confirm this checkout. Please contact the Lead Genisys team; you don't need to purchase again.");
   return parsed.data;
 }
 
