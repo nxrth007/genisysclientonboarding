@@ -1,10 +1,11 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowBigDown, ArrowRight, ExternalLink, Info } from "lucide-react";
 
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import PhoneInput from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -14,16 +15,37 @@ import {
 } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  checkAnswer,
+  isAsked,
+  normalizeAnswer,
+  normalizeAnswers,
+  type AnswerCheck,
+} from "@/lib/answer-checks";
+import {
   FIELDS_AFTER_FILES,
   FIELDS_BEFORE_FILES,
   FILE_FIELD_LABEL,
   INTAKE_FIELDS,
+  SHEET_COLUMN_FIELDS,
   type IntakeField,
 } from "@/lib/intake-fields";
 import { submitIntake } from "@/lib/intake.functions";
 import { intakeSchema } from "@/lib/intake-validation";
 import { checkCheckout } from "@/lib/checkout.functions";
 import { getCustomerAccess, saveCustomerDraft } from "@/lib/customer.functions";
+import { cn } from "@/lib/utils";
+
+const BOX =
+  "mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus-visible:ring-1 focus-visible:ring-ring";
+const BOX_INVALID = "border-destructive focus-visible:ring-destructive";
+
+/** Scroll a question into view and put the cursor in it. */
+function jumpTo(id: string) {
+  const box = document.getElementById(`field-${id}`);
+  const control = document.getElementById(id) ?? box?.querySelector<HTMLElement>("button, input, textarea");
+  box?.scrollIntoView({ behavior: "smooth", block: "center" });
+  control?.focus({ preventScroll: true });
+}
 
 const emptyAnswers = Object.fromEntries(INTAKE_FIELDS.map((f) => [f.id, ""]));
 function restoreAnswers(value: unknown): Record<string, string> {
@@ -44,7 +66,12 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
   const [answers, setAnswers] = useState<Record<string, string>>(emptyAnswers);
   const [files, setFiles] = useState<File[]>([]);
   const [cp575Files, setCp575Files] = useState<File[]>([]);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  // A question's message shows once they've left it with an answer, or after they press Submit.
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [focused, setFocused] = useState<string | null>(null);
+  const [addressPending, setAddressPending] = useState(false);
+  const errorAtFocus = useRef<Record<string, boolean>>({});
   const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
@@ -138,6 +165,48 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
     setAnswers((prev) => ({ ...prev, [id]: value }));
   };
 
+  // Every question's check, kept current as they type (answer-checks.ts has the rules).
+  const checks = useMemo(
+    () => Object.fromEntries(INTAKE_FIELDS.map((f) => [f.id, checkAnswer(f, answers)])) as Record<string, AnswerCheck>,
+    [answers],
+  );
+
+  /** What to show under a question right now. */
+  function shownCheck(id: string): AnswerCheck {
+    const check = checks[id] ?? {};
+    if (!(submitted || touched[id])) return {};
+    // A picked address is still fetching its ZIP.
+    if (id === "businessAddress" && addressPending) return {};
+    if (check.error) {
+      // While they type, an error already showing updates as they fix it, but no new one appears.
+      if (focused === id && !errorAtFocus.current[id]) return {};
+      return { error: check.error };
+    }
+    if (check.warning && focused !== id) return { warning: check.warning };
+    return {};
+  }
+
+  function onFieldFocus(id: string) {
+    errorAtFocus.current[id] = !!shownCheck(id).error;
+    setFocused(id);
+  }
+
+  function onFieldBlur(id: string) {
+    setFocused((current) => (current === id ? null : current));
+    // Tidy the answer as they leave it: (512) 555-0123, "Austin TX, Round Rock TX", https://…
+    setAnswers((prev) => {
+      const value = prev[id] ?? "";
+      const next = normalizeAnswer(id, value);
+      return next === value ? prev : { ...prev, [id]: next };
+    });
+    if ((answers[id] ?? "").trim()) setTouched((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
+  }
+
+  /** The questions still blocking Submit, in the order they're asked. */
+  const failing = submitted
+    ? SHEET_COLUMN_FIELDS.filter((f) => isAsked(f, answers) && checks[f.id]?.error)
+    : [];
+
   async function uploadFiles(): Promise<string[]> {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw new Error("Please confirm your checkout email before submitting.");
@@ -163,19 +232,22 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setMessage("");
-    const parsed = intakeSchema.safeParse({ answers, filePaths: [] });
+    // Tidy every answer, including the one they were still in.
+    const tidy = normalizeAnswers(answers);
+    setAnswers(tidy);
+    setSubmitted(true);
+    const parsed = intakeSchema.safeParse({ answers: tidy, filePaths: [] });
     if (!parsed.success) {
-      const fieldErrors: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const id = issue.path[1];
-        if (typeof id === "string" && !fieldErrors[id]) fieldErrors[id] = issue.message;
-      }
-      setErrors(fieldErrors);
       setStatus("error");
-      setMessage("Please complete the highlighted questions.");
+      const first = SHEET_COLUMN_FIELDS.find((f) => checkAnswer(f, tidy).error);
+      if (first) {
+        // After this render shows the messages, go to the first answer to fix.
+        requestAnimationFrame(() => jumpTo(first.id));
+      } else {
+        setMessage("Please check your answers and try again.");
+      }
       return;
     }
-    setErrors({});
     if (!verifiedEmail) {
       setStatus("idle");
       setIdentityMessage("Please confirm your account email below before submitting. You don't need to purchase again.");
@@ -204,8 +276,20 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
     ) {
       return null;
     }
+    const { error, warning } = shownCheck(field.id);
+    const messageId = `${field.id}-message`;
+    const className = cn(BOX, error && BOX_INVALID);
+    const value = answers[field.id] ?? "";
+    const a11y = {
+      "aria-invalid": error ? true : undefined,
+      "aria-describedby": error || warning ? messageId : undefined,
+    };
     return (
-      <div key={field.id} className="rounded-xl border bg-card p-5">
+      <div
+        key={field.id}
+        id={`field-${field.id}`}
+        className={cn("rounded-xl border bg-card p-5", error && "border-destructive/60")}
+      >
         <FieldLabel field={field} htmlFor={field.id} />
         {field.note ? (
           <p className="mt-1 text-sm text-muted-foreground">{field.note}</p>
@@ -218,38 +302,71 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
           <textarea
             id={field.id}
             rows={4}
-            value={answers[field.id] ?? ""}
+            value={value}
+            placeholder={field.placeholder}
             onChange={(e) => setAnswer(field.id, e.target.value)}
-            className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            onFocus={() => onFieldFocus(field.id)}
+            onBlur={() => onFieldBlur(field.id)}
+            className={className}
+            {...a11y}
           />
         ) : field.addressLookup ? (
           <AddressAutocomplete
             id={field.id}
-            value={answers[field.id] ?? ""}
-            onChange={(value) => setAnswer(field.id, value)}
-            className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            value={value}
+            onChange={(next) => setAnswer(field.id, next)}
+            placeholder={field.placeholder}
+            onFocus={() => onFieldFocus(field.id)}
+            onBlur={() => onFieldBlur(field.id)}
+            onPendingChange={setAddressPending}
+            ariaInvalid={!!error}
+            ariaDescribedBy={a11y["aria-describedby"]}
+            className={className}
+          />
+        ) : field.phone ? (
+          <PhoneInput
+            id={field.id}
+            value={value}
+            onValueChange={(next) => setAnswer(field.id, next)}
+            autoComplete={field.autoComplete}
+            placeholder={field.placeholder}
+            onFocus={() => onFieldFocus(field.id)}
+            onBlur={() => onFieldBlur(field.id)}
+            className={className}
+            {...a11y}
           />
         ) : (
           <input
             id={field.id}
             type={field.type}
-            value={answers[field.id] ?? ""}
+            value={value}
             onChange={(e) => setAnswer(field.id, e.target.value)}
             autoComplete={field.autoComplete}
-            className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            inputMode={field.inputMode}
+            placeholder={field.placeholder}
+            {...(field.inputMode === "url" || field.type === "email"
+              ? { autoCapitalize: "none", autoCorrect: "off", spellCheck: false }
+              : {})}
+            onFocus={() => onFieldFocus(field.id)}
+            onBlur={() => onFieldBlur(field.id)}
+            className={className}
+            {...a11y}
           />
         )}
-        {errors[field.id] ? (
-          <p className="mt-2 text-sm text-destructive">{errors[field.id]}</p>
-        ) : null}
+        <FieldMessage id={messageId} error={error} warning={warning} />
       </div>
     );
   }
 
   function renderRadioField(field: IntakeField) {
     const value = answers[field.id] ?? "";
+    const { error } = shownCheck(field.id);
     return (
-      <div key={field.id} className="rounded-xl border bg-card p-5">
+      <div
+        key={field.id}
+        id={`field-${field.id}`}
+        className={cn("rounded-xl border bg-card p-5", error && "border-destructive/60")}
+      >
         <FieldLabel field={field} />
         <div className="mt-3 flex flex-wrap gap-3">
           {(field.options ?? []).map((option) => {
@@ -308,9 +425,7 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
           </div>
         ) : null}
 
-        {errors[field.id] ? (
-          <p className="mt-2 text-sm text-destructive">{errors[field.id]}</p>
-        ) : null}
+        <FieldMessage id={`${field.id}-message`} error={error} />
       </div>
     );
   }
@@ -335,7 +450,8 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+    // noValidate: the browser's own pop-ups would pre-empt the plain-English messages under each question.
+    <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-6">
       {checkoutMessage ? <p className="text-sm text-muted-foreground" role="status">{checkoutMessage}</p> : null}
       {FIELDS_BEFORE_FILES.map((field) => (
         <Fragment key={field.id}>
@@ -401,6 +517,29 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
 
       {message ? <p className="text-sm text-destructive">{message}</p> : null}
 
+      {failing.length > 0 ? (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm" role="alert">
+          <p className="font-medium text-destructive">
+            {failing.length === 1
+              ? "1 answer needs fixing before you can submit:"
+              : `${failing.length} answers need fixing before you can submit:`}
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-foreground">
+            {failing.map((f) => (
+              <li key={f.id}>
+                <button
+                  type="button"
+                  onClick={() => jumpTo(f.id)}
+                  className="text-left underline underline-offset-2 hover:text-primary"
+                >
+                  {f.short ?? f.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="border-t pt-6 space-y-3">
         {verifiedEmail ? <>
           <p className="text-sm text-muted-foreground">Account email confirmed: {verifiedEmail}</p>
@@ -432,6 +571,25 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
       </div>
     </form>
   );
+}
+
+/** Under a question: what's wrong (red, blocks Submit) or worth a second look (amber, doesn't). */
+function FieldMessage({ id, error, warning }: { id: string; error?: string | undefined; warning?: string | undefined }) {
+  if (error) {
+    return (
+      <p id={id} className="mt-2 text-sm text-destructive" aria-live="polite">
+        {error}
+      </p>
+    );
+  }
+  if (warning) {
+    return (
+      <p id={id} className="mt-2 text-sm text-amber-700 dark:text-amber-400" aria-live="polite">
+        {warning}
+      </p>
+    );
+  }
+  return null;
 }
 
 function FieldLabel({ field, htmlFor }: { field: IntakeField; htmlFor?: string }) {

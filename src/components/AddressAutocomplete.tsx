@@ -22,11 +22,24 @@ export default function AddressAutocomplete({
   value,
   onChange,
   className,
+  placeholder,
+  onFocus,
+  onBlur,
+  onPendingChange,
+  ariaInvalid,
+  ariaDescribedBy,
 }: {
   id: string;
   value: string;
   onChange: (value: string) => void;
   className: string;
+  placeholder?: string | undefined;
+  onFocus?: (() => void) | undefined;
+  onBlur?: (() => void) | undefined;
+  /** True while a picked suggestion's full address (with its ZIP) is being looked up. */
+  onPendingChange?: ((pending: boolean) => void) | undefined;
+  ariaInvalid?: boolean | undefined;
+  ariaDescribedBy?: string | undefined;
 }) {
   const listId = useId();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -77,6 +90,8 @@ export default function AddressAutocomplete({
     onChange([s.main, s.secondary].filter(Boolean).join(", "));
     const sessionToken = session.current || newSession();
     session.current = "";
+    // The suggestion's text has no ZIP yet: the full address arrives in a moment.
+    onPendingChange?.(true);
     try {
       const res = await fetch(
         `${HUB_URL}/api/public/address?place=${encodeURIComponent(s.id)}&session=${encodeURIComponent(sessionToken)}`,
@@ -85,6 +100,8 @@ export default function AddressAutocomplete({
       if (data.address) onChange(data.address);
     } catch {
       // The suggestion's own text stays.
+    } finally {
+      onPendingChange?.(false);
     }
   }
 
@@ -118,14 +135,23 @@ export default function AddressAutocomplete({
           onChange(e.target.value);
         }}
         onKeyDown={onKeyDown}
-        onFocus={() => suggestions.length > 0 && setOpen(true)}
-        onBlur={() => setOpen(false)}
+        onFocus={() => {
+          if (suggestions.length > 0) setOpen(true);
+          onFocus?.();
+        }}
+        onBlur={() => {
+          setOpen(false);
+          onBlur?.();
+        }}
         autoComplete="off"
+        placeholder={placeholder}
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={open}
         aria-controls={listId}
         aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
+        aria-invalid={ariaInvalid || undefined}
+        aria-describedby={ariaDescribedBy}
         className={className}
       />
       {open ? (
