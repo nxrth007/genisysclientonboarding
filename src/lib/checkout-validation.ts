@@ -1,19 +1,28 @@
 import { z } from "zod";
 
-export const checkoutSessionSchema = z.string().regex(/^cs_test_[A-Za-z0-9]+$/).max(300);
+/**
+ * Stripe Checkout Session ids, test and live. The signup at leadgenisys.com
+ * went live on 2026-11-16, so real clients arrive with cs_live_ ids; test ids
+ * still work for rehearsals.
+ */
+export const checkoutSessionSchema = z.string().regex(/^cs_(test|live)_[A-Za-z0-9]+$/).max(300);
 
+/** What a verifier (the Hub, or the signup site's own function) says about a confirmed sign-up. */
 const verificationSchema = z.object({
   valid: z.literal(true),
   email: z.string().email(),
-  // The secured endpoint omits livemode; callers already require cs_test_ IDs.
-  // If a provider supplies livemode, explicitly reject true.
-  livemode: z.literal(false).optional(),
+  name: z.string().nullable().optional(),
+  livemode: z.boolean().optional(),
   subscription_status: z.enum(["trialing", "active"]),
+  trial_end: z.string().nullable().optional(),
 });
+export type VerifiedCheckout = z.infer<typeof verificationSchema>;
 
-export function parseVerifiedCheckout(value: unknown) {
+export const NOT_CONFIRMED = "We couldn't confirm this checkout. Please contact the Lead Genisys team; you don't need to purchase again.";
+
+export function parseVerifiedCheckout(value: unknown): VerifiedCheckout {
   const parsed = verificationSchema.safeParse(value);
-  if (!parsed.success) throw new Error("We couldn't confirm this checkout. Please contact the Lead Genisys team; you don't need to purchase again.");
+  if (!parsed.success) throw new Error(NOT_CONFIRMED);
   return parsed.data;
 }
 

@@ -121,7 +121,7 @@ export function storagePath(userId: string, sessionId: string, item: Pick<Upload
   return `${userId}/${sessionId || "returning"}/${item.id}/${item.kind === "cp575" ? "cp575-" : ""}${safeFileName(name)}`;
 }
 
-const SAVED_PATH = /^[0-9a-f-]{36}\/(cs_test_[A-Za-z0-9]+|returning)\/([0-9a-f-]{36})\/((cp575-)?[A-Za-z0-9._-]{1,70})$/;
+const SAVED_PATH = /^[0-9a-f-]{36}\/(cs_(?:test|live)_[A-Za-z0-9]+|returning)\/([0-9a-f-]{36})\/((cp575-)?[A-Za-z0-9._-]{1,70})$/;
 
 /** What this tab remembers of uploaded files (sessionStorage), so a refresh doesn't lose them. */
 export function toSessionSaved(items: UploadItem[]): string[] {

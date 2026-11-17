@@ -1,7 +1,14 @@
 import { assertCheckoutOwner } from "./checkout-validation";
-import { verifyCheckout } from "./checkout.server";
+import { verifyCheckout, verifyEmail } from "./checkout.server";
 import { matchesCustomerRecords, normalizeCustomerEmail, assertCustomerSubmissionAvailable } from "./customer-validation";
 
+/**
+ * May this signed-in person submit? With a checkout id from the sign-up link:
+ * the checkout must be confirmed and paid for with the email they confirmed.
+ * Without one (they lost the link), after proving they own the email: an
+ * earlier submission of theirs, then Stripe (through the Hub) knowing the
+ * email as a trialing or active subscriber, then the customer tracker sheet.
+ */
 export async function authorizeCustomer(userId: string, sessionId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
@@ -18,6 +25,9 @@ export async function authorizeCustomer(userId: string, sessionId: string) {
     .select("session_id").eq("customer_email", email).limit(1);
   if (ledgerError) throw new Error("We couldn't check your account. Please contact the Lead Genisys team.");
   if (previous?.length) return { email };
+  // Stripe knows them as a trialing or active subscriber (the Hub asks; silently skipped when the Hub can't answer).
+  const subscriber = await verifyEmail(email).catch(() => null);
+  if (subscriber && normalizeCustomerEmail(subscriber.email) === email) return { email };
   const key = process.env["LOVABLE_API_KEY"];
   const connectionKey = process.env["GOOGLE_SHEETS_API_KEY"];
   if (!key || !connectionKey) throw new Error("We couldn't check your account. Please contact the Lead Genisys team.");

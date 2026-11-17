@@ -92,6 +92,8 @@ describe("Remembering uploads", () => {
     assert.deepEqual(back.map((i) => [i.id, i.name, i.status]), [[FILE_ID, "a.jpg", "done"]]);
     assert.deepEqual(fromSavedPaths(saved, "other-user", SESSION), []);
     assert.deepEqual(fromSavedPaths(saved, USER, "cs_test_other"), [], "another checkout's files aren't this one's");
+    const live = `${USER}/cs_live_x9Y8z7/${FILE_ID}/a.jpg`;
+    assert.deepEqual(fromSavedPaths([live], USER, "cs_live_x9Y8z7").map((i) => i.path), [live], "a live checkout's files are remembered too");
     assert.deepEqual(ownedBy(back, "someone-else"), []);
   });
 
