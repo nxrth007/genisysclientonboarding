@@ -7,7 +7,9 @@ export async function submitCheckoutIntake(input: IntakeInput & { sessionId: str
   // Re-read Stripe and confirmed identity on every submission, before any side effects.
   const checkout = await authorizeCustomer(userId, input.sessionId);
   const answers = bindCheckoutEmail(input.answers, checkout.email);
-  if (input.filePaths.some((path) => !path.startsWith(`${userId}/${input.sessionId || "returning"}/`) || path.includes(".."))) {
+  // Files live under the user's own folder: "returning" for everyone (see intake-uploads.ts storagePath), or the checkout's own folder for older uploads.
+  const ownFolder = (path: string) => path.startsWith(`${userId}/returning/`) || (!!input.sessionId && path.startsWith(`${userId}/${input.sessionId}/`));
+  if (input.filePaths.some((path) => !ownFolder(path) || path.includes(".."))) {
     throw new Error("Please reattach your files and try again.");
   }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

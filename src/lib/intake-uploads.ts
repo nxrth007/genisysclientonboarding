@@ -114,11 +114,13 @@ export function safeFileName(name: string): string {
 
 /**
  * The file's place in the bucket: the signed-in user's folder (the storage rule
- * insists on it), their checkout session (or "returning"), then a folder of its
- * own. The Hub reads the CP-575 by its "cp575-" name.
+ * insists on it), then "returning" (the one second folder the rule allows
+ * everyone; checkout-named folders are only allowed for test ids, and the
+ * submission ledger, not the path, ties files to a checkout), then a folder of
+ * its own. The Hub reads the CP-575 by its "cp575-" name.
  */
-export function storagePath(userId: string, sessionId: string, item: Pick<UploadItem, "id" | "kind">, name: string): string {
-  return `${userId}/${sessionId || "returning"}/${item.id}/${item.kind === "cp575" ? "cp575-" : ""}${safeFileName(name)}`;
+export function storagePath(userId: string, _sessionId: string, item: Pick<UploadItem, "id" | "kind">, name: string): string {
+  return `${userId}/returning/${item.id}/${item.kind === "cp575" ? "cp575-" : ""}${safeFileName(name)}`;
 }
 
 const SAVED_PATH = /^[0-9a-f-]{36}\/(cs_(?:test|live)_[A-Za-z0-9]+|returning)\/([0-9a-f-]{36})\/((cp575-)?[A-Za-z0-9._-]{1,70})$/;
@@ -129,8 +131,9 @@ export function toSessionSaved(items: UploadItem[]): string[] {
 }
 
 /**
- * Uploaded files back from a saved list of paths, for this checkout session only
- * (and, once the signed-in user is known, only theirs: `userId` null means not yet).
+ * Uploaded files back from a saved list of paths: those in the shared
+ * "returning" folder, or in this checkout's own folder (older uploads), and,
+ * once the signed-in user is known, only theirs (`userId` null means not yet).
  */
 export function fromSavedPaths(paths: unknown, userId: string | null, sessionId: string): UploadItem[] {
   if (!Array.isArray(paths)) return [];
@@ -140,7 +143,7 @@ export function fromSavedPaths(paths: unknown, userId: string | null, sessionId:
     const m = SAVED_PATH.exec(p);
     if (!m) continue;
     const [, session, id, file, cp] = m;
-    if (session !== (sessionId || "returning") || (userId && !p.startsWith(`${userId}/`))) continue;
+    if ((session !== "returning" && session !== sessionId) || (userId && !p.startsWith(`${userId}/`))) continue;
     if (!id || !file || out.some((i) => i.id === id)) continue;
     out.push({ id, kind: cp ? "cp575" : "photo", name: cp ? file.slice(6) : file, size: 0, type: "", status: "done", path: p, prepared: true, tries: 0 });
   }
@@ -153,8 +156,8 @@ export function ownedBy(items: UploadItem[], userId: string): UploadItem[] {
 }
 
 /** What the saved draft keeps (the answers record takes strings): the paths without the user's folder. */
-export function toDraftSaved(items: UploadItem[], userId: string, sessionId: string): string {
-  const prefix = `${userId}/${sessionId || "returning"}/`;
+export function toDraftSaved(items: UploadItem[], userId: string, _sessionId: string): string {
+  const prefix = `${userId}/returning/`;
   return JSON.stringify(toSessionSaved(items).filter((p) => p.startsWith(prefix)).map((p) => p.slice(prefix.length)));
 }
 
@@ -162,7 +165,7 @@ export function fromDraftSaved(value: unknown, userId: string, sessionId: string
   if (typeof value !== "string" || !value.startsWith("[")) return [];
   try {
     const list = JSON.parse(value) as unknown;
-    const prefix = `${userId}/${sessionId || "returning"}/`;
+    const prefix = `${userId}/returning/`;
     return fromSavedPaths(Array.isArray(list) ? list.map((p) => (typeof p === "string" ? prefix + p : p)) : [], userId, sessionId);
   } catch {
     return [];

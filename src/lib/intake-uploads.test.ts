@@ -58,8 +58,9 @@ describe("Adding files", () => {
 });
 
 describe("Where a file goes in storage", () => {
-  it("is the user's folder, the session, then a folder of its own, with a tidy name", () => {
-    assert.equal(storagePath(USER, SESSION, { id: FILE_ID, kind: "photo" }, "Fachada principal (1).jpg"), `${USER}/${SESSION}/${FILE_ID}/Fachada_principal_1.jpg`);
+  it("is the user's folder, then 'returning' whatever the checkout, then a folder of its own, with a tidy name", () => {
+    assert.equal(storagePath(USER, SESSION, { id: FILE_ID, kind: "photo" }, "Fachada principal (1).jpg"), `${USER}/returning/${FILE_ID}/Fachada_principal_1.jpg`);
+    assert.equal(storagePath(USER, "cs_live_x9Y8z7", { id: FILE_ID, kind: "photo" }, "a.jpg"), `${USER}/returning/${FILE_ID}/a.jpg`, "a live checkout's files go where the storage rule already allows them");
     assert.equal(storagePath(USER, "", { id: FILE_ID, kind: "cp575" }, "CP 575.pdf"), `${USER}/returning/${FILE_ID}/cp575-CP_575.pdf`);
   });
 
@@ -91,9 +92,10 @@ describe("Remembering uploads", () => {
     const back = fromSavedPaths(saved, null, SESSION);
     assert.deepEqual(back.map((i) => [i.id, i.name, i.status]), [[FILE_ID, "a.jpg", "done"]]);
     assert.deepEqual(fromSavedPaths(saved, "other-user", SESSION), []);
-    assert.deepEqual(fromSavedPaths(saved, USER, "cs_test_other"), [], "another checkout's files aren't this one's");
-    const live = `${USER}/cs_live_x9Y8z7/${FILE_ID}/a.jpg`;
-    assert.deepEqual(fromSavedPaths([live], USER, "cs_live_x9Y8z7").map((i) => i.path), [live], "a live checkout's files are remembered too");
+    assert.equal(fromSavedPaths(saved, USER, "cs_test_other").length, 1, "the same person's files are theirs whichever checkout link they used");
+    const older = `${USER}/cs_live_x9Y8z7/${FILE_ID}/a.jpg`;
+    assert.deepEqual(fromSavedPaths([older], USER, "cs_live_x9Y8z7").map((i) => i.path), [older], "an older upload in the checkout's own folder is remembered too");
+    assert.deepEqual(fromSavedPaths([older], USER, "cs_live_other"), [], "but not under another checkout");
     assert.deepEqual(ownedBy(back, "someone-else"), []);
   });
 
