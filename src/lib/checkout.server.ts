@@ -28,6 +28,11 @@ function verifiersFor(q: Question): Verifier[] {
   return list;
 }
 
+/** Which verifiers this server can ask: their names only, never a key. Shown on the page as data-checkout-verifiers so the team can see whether HUB_VERIFICATION_KEY reached the server. */
+export function configuredVerifiers(): string[] {
+  return verifiersFor({ sessionId: "cs_live_check" }).filter((v) => !!process.env[v.keyEnv]).map((v) => v.name);
+}
+
 async function ask(q: Question, fetcher: typeof fetch): Promise<VerifiedCheckout> {
   let answered = false;
   for (const v of verifiersFor(q)) {

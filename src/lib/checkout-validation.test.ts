@@ -1,7 +1,7 @@
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { checkoutSessionSchema, parseVerifiedCheckout, assertCheckoutOwner, bindCheckoutEmail } from "./checkout-validation";
-import { verifyCheckout, verifyEmail } from "./checkout.server";
+import { configuredVerifiers, verifyCheckout, verifyEmail } from "./checkout.server";
 
 const verified = { valid: true, email: "customer@example.com", livemode: true, subscription_status: "trialing" };
 const HUB = "https://genisys-hub.onrender.com/api/public/checkout-verify";
@@ -79,6 +79,11 @@ describe("Checkout safeguards", () => {
     const second = answering({ [HUB]: () => Response.json({ valid: false }, { status: 403 }), [SIGNUP]: () => Response.json(verified) });
     assert.equal((await verifyCheckout("cs_live_Example", second.fetcher)).email, "customer@example.com");
     await assert.rejects(verifyCheckout("cs_test_InvalidExample", answering({ [HUB]: () => Response.json({ valid: false }, { status: 404 }), [SIGNUP]: () => Response.json({ valid: false }, { status: 404 }) }).fetcher), /We couldn't confirm this checkout/);
+  });
+  it("says which verifiers this server can ask, by name only", () => {
+    assert.deepEqual(configuredVerifiers(), ["hub", "signup"]);
+    delete process.env["HUB_VERIFICATION_KEY"];
+    try { assert.deepEqual(configuredVerifiers(), ["signup"]); } finally { process.env["HUB_VERIFICATION_KEY"] = "hub-test-key"; }
   });
   it("does not contact anyone when no verifier key is set here", async () => {
     for (const k of KEYS) delete process.env[k];

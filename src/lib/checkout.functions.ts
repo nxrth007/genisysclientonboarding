@@ -2,19 +2,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { checkoutSessionSchema } from "./checkout-validation";
-import { verifyCheckout, verifyOwnedCheckout, assertUnusedCheckout } from "./checkout.server";
+import { configuredVerifiers, verifyCheckout, verifyOwnedCheckout, assertUnusedCheckout } from "./checkout.server";
 
 // The public probe reveals eligibility only, never Stripe customer information.
 export const checkCheckout = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => typeof data === "string" ? data.slice(0, 301) : "")
   .handler(async ({ data }) => {
     setResponseHeader("Cache-Control", "no-store");
-    if (!checkoutSessionSchema.safeParse(data).success) return { valid: false };
+    const via = configuredVerifiers();
+    if (!checkoutSessionSchema.safeParse(data).success) return { valid: false, via };
     try {
       await verifyCheckout(data);
-      return { valid: true };
+      return { valid: true, via };
     } catch {
-      return { valid: false };
+      return { valid: false, via };
     }
   });
 

@@ -87,6 +87,8 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
   const [sendingLink, setSendingLink] = useState(false);
   const [identityMessage, setIdentityMessage] = useState("");
   const [checkoutMessage, setCheckoutMessage] = useState("");
+  // Which verifiers the server could ask (names only), for the team's eyes in the page's markup.
+  const [checkoutVia, setCheckoutVia] = useState("");
   const [draftReady, setDraftReady] = useState(false);
   const edited = useRef(false);
   const draftKey = `lead-genisys-intake:${sessionId || "returning"}`;
@@ -113,7 +115,9 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
     let active = true;
     setCheckoutMessage("Confirming your checkout…");
     void check({ data: sessionId }).then((result) => {
-      if (active) setCheckoutMessage(result.valid ? "" : "We couldn't confirm this checkout link. You can still fill out the form; contact our team before submitting.");
+      if (!active) return;
+      setCheckoutVia(Array.isArray(result.via) ? result.via.join(",") : "");
+      setCheckoutMessage(result.valid ? "" : "We couldn't confirm this checkout link. You can still fill out the form; contact our team before submitting.");
     }).catch(() => {
       if (active) setCheckoutMessage("We couldn't confirm this checkout link. Contact our team if you need help.");
     });
@@ -457,6 +461,7 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
   return (
     // noValidate: the browser's own pop-ups would pre-empt the plain-English messages under each question.
     <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-6">
+      {sessionId ? <span hidden data-checkout-verifiers={checkoutVia} /> : null}
       {checkoutMessage ? <p className="text-sm text-muted-foreground" role="status">{checkoutMessage}</p> : null}
       {FIELDS_BEFORE_FILES.map((field) => (
         <Fragment key={field.id}>
