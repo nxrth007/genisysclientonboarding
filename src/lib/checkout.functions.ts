@@ -10,12 +10,13 @@ export const checkCheckout = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     setResponseHeader("Cache-Control", "no-store");
     const via = configuredVerifiers();
-    if (!checkoutSessionSchema.safeParse(data).success) return { valid: false, via };
+    const trail: string[] = [];
+    if (!checkoutSessionSchema.safeParse(data).success) return { valid: false, via, trail };
     try {
-      await verifyCheckout(data);
-      return { valid: true, via };
+      await verifyCheckout(data, fetch, trail);
+      return { valid: true, via, trail };
     } catch {
-      return { valid: false, via };
+      return { valid: false, via, trail };
     }
   });
 

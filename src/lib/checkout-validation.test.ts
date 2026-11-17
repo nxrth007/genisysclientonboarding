@@ -85,6 +85,14 @@ describe("Checkout safeguards", () => {
     delete process.env["HUB_VERIFICATION_KEY"];
     try { assert.deepEqual(configuredVerifiers(), ["signup"]); } finally { process.env["HUB_VERIFICATION_KEY"] = "hub-test-key"; }
   });
+  it("keeps a trail of who was asked and how it went: names and statuses only", async () => {
+    const trail: string[] = [];
+    await assert.rejects(verifyCheckout("cs_live_Example", answering({ [HUB]: () => Response.json({ error: "private" }, { status: 503 }), [SIGNUP]: () => Response.json({ valid: false }, { status: 403 }) }).fetcher, trail));
+    assert.deepEqual(trail, ["hub:503", "signup:403"]);
+    const okTrail: string[] = [];
+    await verifyCheckout("cs_live_Example", answering({ [HUB]: () => { throw new Error("private-transport-detail"); }, [SIGNUP]: () => Response.json(verified) }).fetcher, okTrail);
+    assert.deepEqual(okTrail, ["hub:unreachable", "signup:ok"]);
+  });
   it("does not contact anyone when no verifier key is set here", async () => {
     for (const k of KEYS) delete process.env[k];
     let contacted = false;

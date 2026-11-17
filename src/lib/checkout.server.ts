@@ -33,12 +33,19 @@ export function configuredVerifiers(): string[] {
   return verifiersFor({ sessionId: "cs_live_check" }).filter((v) => !!process.env[v.keyEnv]).map((v) => v.name);
 }
 
-async function ask(q: Question, fetcher: typeof fetch): Promise<VerifiedCheckout> {
+/**
+ * `trail`, when given, collects how each verifier went ("hub:403", "signup:ok",
+ * "hub:timeout"): names and statuses only, never keys or provider text.
+ */
+async function ask(q: Question, fetcher: typeof fetch, trail: string[] = []): Promise<VerifiedCheckout> {
   let answered = false;
   for (const v of verifiersFor(q)) {
     // Read only during server execution; never returned or logged.
     const key = process.env[v.keyEnv];
-    if (!key) continue;
+    if (!key) {
+      trail.push(`${v.name}:no-key`);
+      continue;
+    }
     let response: Response;
     try {
       response = await fetcher(v.url, {
@@ -49,16 +56,21 @@ async function ask(q: Question, fetcher: typeof fetch): Promise<VerifiedCheckout
         redirect: "error",
         cache: "no-store",
       });
-    } catch {
-      continue; // unreachable: the next verifier may answer
+    } catch (err) {
+      trail.push(`${v.name}:${err instanceof Error && /timeout/i.test(err.name) ? "timeout" : "unreachable"}`);
+      continue; // the next verifier may answer
     }
     if (response.ok) {
       try {
-        return parseVerifiedCheckout(await response.json());
+        const verified = parseVerifiedCheckout(await response.json());
+        trail.push(`${v.name}:ok`);
+        return verified;
       } catch {
+        trail.push(`${v.name}:bad-answer`);
         continue; // an answer in a shape we don't trust counts as no answer
       }
     }
+    trail.push(`${v.name}:${response.status}`);
     // 403 (not a member) and 404 are answers; a wrong password (401), a bad request or a server error are not.
     if (response.status === 403 || response.status === 404) answered = true;
   }
@@ -66,9 +78,9 @@ async function ask(q: Question, fetcher: typeof fetch): Promise<VerifiedCheckout
 }
 
 /** Confirms a checkout id from the sign-up link. */
-export async function verifyCheckout(sessionId: string, fetcher: typeof fetch = fetch): Promise<VerifiedCheckout> {
+export async function verifyCheckout(sessionId: string, fetcher: typeof fetch = fetch, trail?: string[]): Promise<VerifiedCheckout> {
   const id = checkoutSessionSchema.parse(sessionId);
-  return ask({ sessionId: id }, fetcher);
+  return ask({ sessionId: id }, fetcher, trail);
 }
 
 /** Confirms a client by the email they proved they own (no link): the Hub asks Stripe for a trialing or active subscription. */
