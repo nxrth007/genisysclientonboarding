@@ -5,6 +5,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowBigDown, ArrowRight, ExternalLink, Info } from "lucide-react";
 
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import { FileUploads, useIntakeUploads } from "@/components/FileUploads";
 import PhoneInput from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,8 +65,9 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [answers, setAnswers] = useState<Record<string, string>>(emptyAnswers);
-  const [files, setFiles] = useState<File[]>([]);
-  const [cp575Files, setCp575Files] = useState<File[]>([]);
+  const answersRef = useRef(answers);
+  answersRef.current = answers;
+  const [userId, setUserId] = useState("");
   // A question's message shows once they've left it with an answer, or after they press Submit.
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -76,6 +78,11 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
   const [message, setMessage] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
   const [verifiedEmail, setVerifiedEmail] = useState("");
+  // Files upload as soon as the email is confirmed; what's up is remembered (src/components/FileUploads.tsx).
+  const uploads = useIntakeUploads({ sessionId, signedIn: !!verifiedEmail });
+  const { claim: claimUploads, draftValue: uploadsDraftValue, done: uploadsDone, pending: uploadsPending } = uploads;
+  /** The answers as the saved draft takes them, with the uploaded files. */
+  const withUploads = (a: Record<string, string>, uid: string) => (uid ? { ...a, uploadedFiles: uploadsDraftValue(uid) } : a);
   const [confirming, setConfirming] = useState(false);
   const [sendingLink, setSendingLink] = useState(false);
   const [identityMessage, setIdentityMessage] = useState("");
@@ -118,7 +125,8 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
     async function restoreIdentity() {
       const { data } = await supabase.auth.getUser();
       if (!active) return;
-      if (!data.user) { setVerifiedEmail(""); return; }
+      if (!data.user) { setVerifiedEmail(""); setUserId(""); return; }
+      setUserId(data.user.id);
       setConfirming(true);
       try {
         const result = await access({ data: sessionId });
@@ -126,6 +134,7 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
         setVerifiedEmail(result.email);
         setAccountEmail(result.email);
         setIdentityMessage("");
+        claimUploads(data.user.id, result.draft);
         if (!edited.current) {
           setAnswers({ ...restoreAnswers(result.draft), leadEmail: result.email });
         } else {
@@ -139,7 +148,17 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
     const refreshIdentity = () => { void restoreIdentity(); };
     window.addEventListener("lead-genisys-auth-change", refreshIdentity);
     return () => { active = false; window.removeEventListener("lead-genisys-auth-change", refreshIdentity); };
-  }, [access, sessionId]);
+  }, [access, claimUploads, sessionId]);
+
+  // Once a batch of uploads is in, the draft remembers them (so a new tab or a later visit has them).
+  useEffect(() => {
+    if (!verifiedEmail || !userId || uploadsPending || !uploadsDone) return;
+    const t = setTimeout(() => {
+      void saveDraft({ data: { sessionId, answers: withUploads(answersRef.current, userId) } }).catch(() => { /* The next save, or Submit, carries them. */ });
+    }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when uploads land, not on every keystroke
+  }, [uploadsDone, uploadsPending, verifiedEmail, userId, sessionId]);
 
   async function sendConfirmation() {
     if (!accountEmail.trim()) { setIdentityMessage("Enter the email associated with your Lead Genisys account."); return; }
@@ -155,8 +174,8 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
 
   async function saveProgress() {
     try {
-      await saveDraft({ data: { sessionId, answers } });
-      setIdentityMessage("Your answers are saved. Reattach your files when you return.");
+      await saveDraft({ data: { sessionId, answers: withUploads(answers, userId) } });
+      setIdentityMessage(uploadsDone ? "Your answers and uploaded files are saved. Come back with the same email to finish." : "Your answers are saved. Come back with the same email to finish.");
     } catch (error) { setIdentityMessage(error instanceof Error ? error.message : "We couldn't save your progress."); }
   }
 
@@ -207,28 +226,6 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
     ? SHEET_COLUMN_FIELDS.filter((f) => isAsked(f, answers) && checks[f.id]?.error)
     : [];
 
-  async function uploadFiles(): Promise<string[]> {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) throw new Error("Please confirm your checkout email before submitting.");
-    const prefix = `${data.user.id}/${sessionId || "returning"}/${crypto.randomUUID()}`;
-    const paths: string[] = [];
-    for (const file of files) {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${prefix}/${safeName}`;
-      const { error } = await supabase.storage.from("intake-uploads").upload(path, file);
-      if (error) throw new Error(`Could not upload ${file.name}: ${error.message}`);
-      paths.push(path);
-    }
-    for (const file of cp575Files) {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${prefix}/cp575-${safeName}`;
-      const { error } = await supabase.storage.from("intake-uploads").upload(path, file);
-      if (error) throw new Error(`Could not upload ${file.name}: ${error.message}`);
-      paths.push(path);
-    }
-    return paths;
-  }
-
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setMessage("");
@@ -248,6 +245,12 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
       }
       return;
     }
+    if (uploads.failed) {
+      setStatus("error");
+      setMessage(uploads.failed === 1 ? "1 file didn’t upload. Tap Retry next to it, or remove it, then submit again." : `${uploads.failed} files didn’t upload. Tap Retry next to each, or remove them, then submit again.`);
+      requestAnimationFrame(() => jumpTo("marketingContent"));
+      return;
+    }
     if (!verifiedEmail) {
       setStatus("idle");
       setIdentityMessage("Please confirm your account email below before submitting. You don't need to purchase again.");
@@ -256,8 +259,10 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
     }
     setStatus("saving");
     try {
-      await saveDraft({ data: { sessionId, answers: parsed.data.answers } });
-      const filePaths = await uploadFiles();
+      // Files picked a moment ago may still be going up: the button shows how many are left.
+      await uploads.waitForUploads();
+      const filePaths = uploads.paths();
+      await saveDraft({ data: { sessionId, answers: withUploads(parsed.data.answers, userId) } });
       await submit({ data: { answers: parsed.data.answers, filePaths, sessionId } });
       setStatus("done");
       try { sessionStorage.removeItem(draftKey); } catch { /* optional storage */ }
@@ -460,53 +465,27 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
         </Fragment>
       ))}
 
-      <div className="rounded-xl border bg-card p-5">
-        <label htmlFor="marketingContent" className="block text-base font-normal text-ink">
-          {FILE_FIELD_LABEL}
-        </label>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Upload up to 20 files — logo, before/after photos, service photos.
-        </p>
-        <input
-          id="marketingContent"
-          type="file"
-          multiple
-          accept="image/*,.pdf,.svg,.zip"
-          onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 20))}
-          className="mt-3 block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border file:border-input file:bg-background file:px-4 file:py-2 file:text-sm file:text-foreground"
-        />
-        {files.length > 0 ? (
-          <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-            {files.map((file) => (
-              <li key={file.name}>{file.name}</li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
+      <FileUploads
+        uploads={uploads}
+        kind="photo"
+        inputId="marketingContent"
+        label={FILE_FIELD_LABEL}
+        description="Up to 20 files: your logo, photos of finished jobs, your crew, trucks and equipment. Photos are shrunk before they upload, so this is quick even from a phone."
+        hint="Add them in as many goes as you like. On a phone, pick several at once from your photo library."
+        accept="image/*,.heic,.heif,.pdf,.svg"
+        signedIn={!!verifiedEmail}
+      />
 
-      <div className="rounded-xl border bg-card p-5">
-        <label htmlFor="cp575Document" className="block text-base font-normal text-ink">
-          CP-575 Document (optional but strongly encouraged)
-        </label>
-        <p className="mt-1 text-sm text-muted-foreground">
-          If you have it handy, upload your IRS CP-575 (EIN confirmation letter) — PDF or photo is
-          fine. This helps us verify your legal business name for text messaging registration.
-        </p>
-        <input
-          id="cp575Document"
-          type="file"
-          accept="image/*,.pdf"
-          onChange={(e) => setCp575Files(Array.from(e.target.files ?? []).slice(0, 1))}
-          className="mt-3 block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border file:border-input file:bg-background file:px-4 file:py-2 file:text-sm file:text-foreground"
-        />
-        {cp575Files.length > 0 ? (
-          <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-            {cp575Files.map((file) => (
-              <li key={file.name}>{file.name}</li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
+      <FileUploads
+        uploads={uploads}
+        kind="cp575"
+        inputId="cp575Document"
+        label="CP-575 Document (optional but strongly encouraged)"
+        description="If you have it handy, upload your IRS CP-575 (EIN confirmation letter) — PDF or photo is fine. This helps us verify your legal business name for text messaging registration."
+        hint="One file: a PDF or a clear photo of the letter."
+        accept="image/*,.heic,.heif,.pdf"
+        signedIn={!!verifiedEmail}
+      />
 
       {FIELDS_AFTER_FILES.map((field) => (
         <Fragment key={field.id}>
@@ -565,7 +544,7 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
           disabled={status === "saving"}
           className="w-full sm:w-[320px]"
         >
-          {status === "saving" ? "Submitting…" : "Submit and continue"}
+          {status === "saving" ? (uploads.pending ? `Uploading files… ${uploads.done} of ${uploads.total}` : "Submitting…") : "Submit and continue"}
           <ArrowRight />
         </Button>
       </div>
