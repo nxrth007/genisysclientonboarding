@@ -120,12 +120,13 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
     setCheckoutMessage("Confirming your sign-up…");
     void (async () => {
       const { data } = await supabase.auth.getUser();
-      if (data.user) { if (active) setCheckoutMessage(""); return; } // already signed in on this device
       const result = await claim({ data: { sessionId } });
       if (!active) return;
       setCheckoutVia(result.via.join(","));
       setCheckoutTrail(result.trail.join(","));
       if (!result.ok) { setCheckoutMessage(`${result.message} You can still fill out the form; enter the email you signed up with at the bottom.`); return; }
+      if (data.user?.email?.toLowerCase() === result.email) { setCheckoutMessage(""); return; } // already signed in as this client
+      if (data.user) await supabase.auth.signOut(); // someone else was signed in on this device (an earlier test, a colleague)
       const { error } = await supabase.auth.verifyOtp({ token_hash: result.tokenHash, type: "magiclink" });
       if (!active) return;
       setCheckoutMessage(error ? "We confirmed your sign-up but couldn't sign you in automatically. Enter the email you signed up with at the bottom of the form." : "");
