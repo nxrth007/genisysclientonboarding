@@ -16,7 +16,7 @@ function answering(plan: Record<string, () => Response | Promise<Response>>) {
     asked.push(u === HUB ? "hub" : u === SIGNUP ? "signup" : u);
     assert.equal(options?.method, "POST");
     assert.equal(new Headers(options?.headers).get("Content-Type"), "application/json");
-    assert.equal(options?.redirect, "error");
+    assert.equal(options?.redirect, "manual", "Cloudflare's fetch has no \"error\"; a redirect is a 3xx answer we don't trust");
     assert.equal(options?.cache, undefined, "no cache option: Cloudflare's fetch refuses it");
     const answer = plan[u];
     if (!answer) throw new Error(`unexpected verifier ${u}`);

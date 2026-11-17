@@ -58,9 +58,10 @@ async function ask(q: Question, fetcher: typeof fetch, trail: string[] = []): Pr
         method: "POST",
         headers: { "Content-Type": "application/json", "x-onboarding-key": key },
         body: JSON.stringify("sessionId" in q ? { session_id: q.sessionId } : { email: q.email }),
-        // No `cache` option: the published server runs on Cloudflare, whose fetch refuses it outright.
+        // The published server runs on Cloudflare, whose fetch refuses the `cache` option and
+        // `redirect: "error"` outright; with "manual" a redirect comes back as a 3xx, which is no answer.
         signal: AbortSignal.timeout(10000),
-        redirect: "error",
+        redirect: "manual",
       });
     } catch (err) {
       trail.push(`${v.name}:${err instanceof Error && /timeout/i.test(err.name) ? "timeout" : `unreachable(${errorLabel(err)})`}`);
