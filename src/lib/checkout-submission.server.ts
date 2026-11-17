@@ -5,7 +5,7 @@ import type { IntakeInput } from "./intake-validation";
 
 export async function submitCheckoutIntake(input: IntakeInput & { sessionId: string }, userId: string) {
   // Re-read Stripe and confirmed identity on every submission, before any side effects.
-  const checkout = await authorizeCustomer(userId, input.sessionId);
+  const checkout = await authorizeCustomer(userId, input.sessionId, { fresh: true });
   const answers = bindCheckoutEmail(input.answers, checkout.email);
   // Files live under the user's own folder: "returning" for everyone (see intake-uploads.ts storagePath), or the checkout's own folder for older uploads.
   const ownFolder = (path: string) => path.startsWith(`${userId}/returning/`) || (!!input.sessionId && path.startsWith(`${userId}/${input.sessionId}/`));

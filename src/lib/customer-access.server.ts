@@ -9,12 +9,20 @@ import { matchesCustomerRecords, normalizeCustomerEmail, assertCustomerSubmissio
  * earlier submission of theirs, then Stripe (through the Hub) knowing the
  * email as a trialing or active subscriber, then the customer tracker sheet.
  */
-export async function authorizeCustomer(userId: string, sessionId: string) {
+export async function authorizeCustomer(userId: string, sessionId: string, opts: { fresh?: boolean } = {}) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
   const user = data.user;
-  if (error || !user?.email || !user.email_confirmed_at) throw new Error("Please confirm your account email before submitting.");
+  if (error || !user?.email || !user.email_confirmed_at) throw new Error("Please sign in with the email you signed up with before submitting.");
   const email = normalizeCustomerEmail(user.email);
+  // A draft row exists only once this person was let in for this checkout; the autosaves
+  // behind it needn't ask Stripe again. Submit asks fresh.
+  if (!opts.fresh) {
+    let q = supabaseAdmin.from("onboarding_drafts").select("user_id").eq("user_id", userId).eq("verified_email", email);
+    if (sessionId) q = q.eq("session_id", sessionId);
+    const { data: known } = await q.maybeSingle();
+    if (known) return { email };
+  }
   if (sessionId) {
     const checkout = await verifyCheckout(sessionId);
     assertCheckoutOwner(checkout.email, user.email, user.email_confirmed_at);

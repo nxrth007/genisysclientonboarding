@@ -91,10 +91,28 @@ export async function verifyCheckout(sessionId: string, fetcher: typeof fetch = 
 }
 
 /** Confirms a client by the email they proved they own (no link): the Hub asks Stripe for a trialing or active subscription. */
-export async function verifyEmail(email: string, fetcher: typeof fetch = fetch): Promise<VerifiedCheckout> {
+export async function verifyEmail(email: string, fetcher: typeof fetch = fetch, trail?: string[]): Promise<VerifiedCheckout> {
   const clean = email.trim().toLowerCase();
   if (!clean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) throw new Error(NOT_CONFIRMED);
-  return ask({ email: clean }, fetcher);
+  return ask({ email: clean }, fetcher, trail);
+}
+
+/**
+ * A one-time sign-in token for a client whose trial we have just confirmed (by
+ * their checkout link or their sign-up email), so they never open an email or
+ * type a password: the browser turns it into a session with
+ * supabase.auth.verifyOtp. Nothing is emailed. The auth user is created if this
+ * is their first visit.
+ */
+export async function signInTokenFor(email: string): Promise<string> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const clean = email.trim().toLowerCase();
+  // Creating a user who exists is refused, which is fine.
+  await supabaseAdmin.auth.admin.createUser({ email: clean, email_confirm: true });
+  const { data, error } = await supabaseAdmin.auth.admin.generateLink({ type: "magiclink", email: clean });
+  const token = data?.properties?.hashed_token;
+  if (error || !token) throw new Error("We confirmed your trial but couldn't sign you in. Please contact the Lead Genisys team; you don't need to purchase again.");
+  return token;
 }
 
 export async function verifyOwnedCheckout(sessionId: string, userId: string) {

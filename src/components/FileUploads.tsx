@@ -62,7 +62,7 @@ export function useIntakeUploads({ sessionId, signedIn }: { sessionId: string; s
   // What this tab already uploaded (a refresh, or the tab put to sleep while they confirmed their email).
   useEffect(() => {
     try {
-      const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "[]") as unknown;
+      const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]") as unknown;
       const back = fromSavedPaths(saved, null, sessionId);
       if (back.length) setItems((prev) => [...prev, ...back.filter((b) => !prev.some((p) => p.id === b.id))]);
     } catch {
@@ -74,7 +74,7 @@ export function useIntakeUploads({ sessionId, signedIn }: { sessionId: string; s
   useEffect(() => {
     if (!restored) return;
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify(toSessionSaved(items)));
+      localStorage.setItem(storageKey, JSON.stringify(toSessionSaved(items)));
     } catch {
       /* Storage may be disabled. */
     }
@@ -368,7 +368,7 @@ function UploadTile({ item, signedIn, onRemove, onRetry }: { item: UploadItem; s
             ? (item.error ?? "Didn’t upload")
             : signedIn
               ? "Waiting its turn"
-              : "Uploads once your email is confirmed";
+              : "Uploads once you're signed in";
   return (
     <li className={cn("relative overflow-hidden rounded-lg border bg-background", item.status === "error" && "border-destructive/60")}>
       <div className="relative flex aspect-[4/3] items-center justify-center bg-muted/40">

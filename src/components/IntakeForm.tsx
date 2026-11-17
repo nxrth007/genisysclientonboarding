@@ -32,7 +32,7 @@ import {
 } from "@/lib/intake-fields";
 import { submitIntake } from "@/lib/intake.functions";
 import { intakeSchema } from "@/lib/intake-validation";
-import { checkCheckout } from "@/lib/checkout.functions";
+import { claimAccess } from "@/lib/checkout.functions";
 import { getCustomerAccess, saveCustomerDraft } from "@/lib/customer.functions";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +59,7 @@ function restoreAnswers(value: unknown): Record<string, string> {
 
 export default function IntakeForm({ sessionId }: { sessionId: string }) {
   const submit = useServerFn(submitIntake);
-  const check = useServerFn(checkCheckout);
+  const claim = useServerFn(claimAccess);
   const access = useServerFn(getCustomerAccess);
   const saveDraft = useServerFn(saveCustomerDraft);
   const queryClient = useQueryClient();
@@ -96,7 +96,7 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
 
   useEffect(() => {
     try {
-      const stored = sessionStorage.getItem(draftKey);
+      const stored = localStorage.getItem(draftKey);
       if (stored) {
         const draft = JSON.parse(stored) as Record<string, unknown>;
         setAnswers(restoreAnswers(draft));
@@ -108,23 +108,30 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
 
   useEffect(() => {
     if (!draftReady || status === "done") return;
-    try { sessionStorage.setItem(draftKey, JSON.stringify(answers)); } catch { /* Storage may be disabled. */ }
+    try { localStorage.setItem(draftKey, JSON.stringify(answers)); } catch { /* Storage may be disabled. */ }
   }, [answers, draftKey, draftReady, status]);
 
+  // Arriving from the sign-up: the checkout is confirmed and the client signed in, with no email to open.
+  const claimedFor = useRef("");
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || claimedFor.current === sessionId) return;
+    claimedFor.current = sessionId;
     let active = true;
-    setCheckoutMessage("Confirming your checkout…");
-    void check({ data: sessionId }).then((result) => {
+    setCheckoutMessage("Confirming your sign-up…");
+    void (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) { if (active) setCheckoutMessage(""); return; } // already signed in on this device
+      const result = await claim({ data: { sessionId } });
       if (!active) return;
-      setCheckoutVia(Array.isArray(result.via) ? result.via.join(",") : "");
-      setCheckoutTrail(Array.isArray(result.trail) ? result.trail.join(",") : "");
-      setCheckoutMessage(result.valid ? "" : "We couldn't confirm this checkout link. You can still fill out the form; contact our team before submitting.");
-    }).catch(() => {
-      if (active) setCheckoutMessage("We couldn't confirm this checkout link. Contact our team if you need help.");
-    });
+      setCheckoutVia(result.via.join(","));
+      setCheckoutTrail(result.trail.join(","));
+      if (!result.ok) { setCheckoutMessage(`${result.message} You can still fill out the form; enter the email you signed up with at the bottom.`); return; }
+      const { error } = await supabase.auth.verifyOtp({ token_hash: result.tokenHash, type: "magiclink" });
+      if (!active) return;
+      setCheckoutMessage(error ? "We confirmed your sign-up but couldn't sign you in automatically. Enter the email you signed up with at the bottom of the form." : "");
+    })().catch(() => { if (active) setCheckoutMessage("We couldn't confirm this sign-up link right now. You can still fill out the form; enter the email you signed up with at the bottom."); });
     return () => { active = false; };
-  }, [check, sessionId]);
+  }, [claim, sessionId]);
 
   useEffect(() => {
     let active = true;
@@ -156,6 +163,16 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
     return () => { active = false; window.removeEventListener("lead-genisys-auth-change", refreshIdentity); };
   }, [access, claimUploads, sessionId]);
 
+  // Signed in: the answers save to their account a moment after each change, so any tab or device with the link has them.
+  useEffect(() => {
+    if (!verifiedEmail || !userId || !edited.current || status === "done") return;
+    const t = setTimeout(() => {
+      void saveDraft({ data: { sessionId, answers: withUploads(answersRef.current, userId) } }).catch(() => { /* the next change, or Submit, carries them */ });
+    }, 2500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs as answers change
+  }, [answers, verifiedEmail, userId, sessionId, status]);
+
   // Once a batch of uploads is in, the draft remembers them (so a new tab or a later visit has them).
   useEffect(() => {
     if (!verifiedEmail || !userId || uploadsPending || !uploadsDone) return;
@@ -173,16 +190,26 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
       const redirect = new URL("/", window.location.origin);
       if (sessionId) redirect.searchParams.set("session_id", sessionId);
       const { error } = await supabase.auth.signInWithOtp({ email: accountEmail.trim(), options: { emailRedirectTo: redirect.href } });
-      setIdentityMessage(error ? "We couldn't send your confirmation email. Please try again shortly or contact our team." : "Check your inbox for the confirmation link. After confirming, return to this tab — your answers are still here.");
+      setIdentityMessage(error ? "We couldn't send your sign-in email. Please try again shortly or contact our team." : "Check your inbox for the sign-in link. Your answers are saved on this device either way.");
     } catch { setIdentityMessage("We couldn't send your confirmation email. Please contact our team."); }
     finally { setSendingLink(false); }
   }
 
-  async function saveProgress() {
+  /** The way in without the sign-up link: the email they signed up with, checked against Stripe. */
+  async function continueWithEmail() {
+    const email = accountEmail.trim();
+    if (!email) { setIdentityMessage("Enter the email you signed up with."); return; }
+    setSendingLink(true);
+    setIdentityMessage("");
     try {
-      await saveDraft({ data: { sessionId, answers: withUploads(answers, userId) } });
-      setIdentityMessage(uploadsDone ? "Your answers and uploaded files are saved. Come back with the same email to finish." : "Your answers are saved. Come back with the same email to finish.");
-    } catch (error) { setIdentityMessage(error instanceof Error ? error.message : "We couldn't save your progress."); }
+      const result = await claim({ data: { email } });
+      setCheckoutVia(result.via.join(","));
+      setCheckoutTrail(result.trail.join(","));
+      if (!result.ok) { setIdentityMessage(result.message); return; }
+      const { error } = await supabase.auth.verifyOtp({ token_hash: result.tokenHash, type: "magiclink" });
+      setIdentityMessage(error ? "We found your trial but couldn't sign you in. Try \"Email me a sign-in link\" below." : "");
+    } catch { setIdentityMessage("We couldn't check that email right now. Try again in a moment or contact our team."); }
+    finally { setSendingLink(false); }
   }
 
   const setAnswer = (id: string, value: string) => {
@@ -259,7 +286,7 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
     }
     if (!verifiedEmail) {
       setStatus("idle");
-      setIdentityMessage("Please confirm your account email below before submitting. You don't need to purchase again.");
+      setIdentityMessage("Please sign in below with the email you signed up with, then press Submit. You don't need to purchase again.");
       setAccountEmail((prev) => prev || answers["leadEmail"] || "");
       return;
     }
@@ -271,7 +298,7 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
       await saveDraft({ data: { sessionId, answers: withUploads(parsed.data.answers, userId) } });
       await submit({ data: { answers: parsed.data.answers, filePaths, sessionId } });
       setStatus("done");
-      try { sessionStorage.removeItem(draftKey); } catch { /* optional storage */ }
+      try { localStorage.removeItem(draftKey); } catch { /* optional storage */ }
       queryClient.removeQueries({ queryKey: ["checkout-owner"] });
       void navigate({ to: "/step-2" });
     } catch (error) {
@@ -464,7 +491,7 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
     // noValidate: the browser's own pop-ups would pre-empt the plain-English messages under each question.
     <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-6">
       {sessionId ? <span hidden data-checkout-verifiers={checkoutVia} data-checkout-trail={checkoutTrail} /> : null}
-      {checkoutMessage ? <p className="text-sm text-muted-foreground" role="status">{checkoutMessage}</p> : null}
+      {checkoutMessage ? <p className="text-sm text-muted-foreground" role="status">{checkoutMessage}</p> : verifiedEmail ? <p className="text-sm text-muted-foreground" role="status">Signed in as {verifiedEmail} — your answers save as you go.</p> : null}
       {FIELDS_BEFORE_FILES.map((field) => (
         <Fragment key={field.id}>
           {field.section ? <SectionHeading section={field.section} /> : null}
@@ -528,16 +555,16 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
 
       <div className="border-t pt-6 space-y-3">
         {verifiedEmail ? <>
-          <p className="text-sm text-muted-foreground">Account email confirmed: {verifiedEmail}</p>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" onClick={() => { void saveProgress(); }}>Save progress</Button>
-            <Button type="button" variant="link" onClick={async () => { await supabase.auth.signOut(); setVerifiedEmail(""); }}>Use a different account email</Button>
-          </div>
+          <p className="text-sm text-muted-foreground">Signed in as <span className="text-foreground">{verifiedEmail}</span>. Your answers and files save as you go; you can come back to this link any time to finish.</p>
+          <Button type="button" variant="link" className="px-0" onClick={async () => { await supabase.auth.signOut(); setVerifiedEmail(""); }}>Not you? Use a different email</Button>
         </> : <>
-          <label htmlFor="account-email" className="block text-base font-normal text-ink">Confirm your Lead Genisys account email</label>
-          <p className="text-sm text-muted-foreground">Use the email you signed up with. No password or new purchase needed.</p>
-          <input id="account-email" type="email" autoComplete="email" value={accountEmail} onChange={(event) => setAccountEmail(event.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring" />
-          <Button type="button" variant="outline" disabled={sendingLink || confirming} onClick={() => { void sendConfirmation(); }}>{confirming ? "Checking your account…" : sendingLink ? "Sending…" : "Send confirmation link"}</Button>
+          <label htmlFor="account-email" className="block text-base font-normal text-ink">{sessionId ? "Sign in to finish" : "Enter the email you signed up with"}</label>
+          <p className="text-sm text-muted-foreground">The email from your free-trial sign-up. No password, nothing to purchase again.</p>
+          <div className="flex flex-wrap gap-2">
+            <input id="account-email" type="email" autoComplete="email" value={accountEmail} onChange={(event) => setAccountEmail(event.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring sm:max-w-sm" />
+            <Button type="button" variant="outline" disabled={sendingLink || confirming} onClick={() => { void continueWithEmail(); }}>{confirming || sendingLink ? "Checking…" : "Continue"}</Button>
+          </div>
+          <Button type="button" variant="link" className="px-0 text-xs" disabled={sendingLink} onClick={() => { void sendConfirmation(); }}>Email me a sign-in link instead</Button>
         </>}
         {identityMessage ? <p className="text-sm text-muted-foreground" role="status">{identityMessage}</p> : null}
         <Button asChild variant="link" className="px-0"><a href="mailto:alex@leadgenisys.com">Need help? Contact Lead Genisys</a></Button>

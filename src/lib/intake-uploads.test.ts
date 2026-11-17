@@ -135,7 +135,7 @@ describe("What a failed upload says", () => {
       { id: "4", kind: "cp575", name: "l.pdf", status: "done", ...base },
     ];
     assert.equal(uploadsSummary(items, "photo", true), "3 of 20 added · 1 uploaded · 1 didn’t upload");
-    assert.equal(uploadsSummary(items, "photo", false), "3 of 20 added · 1 uploaded · 1 didn’t upload · the rest upload once your email is confirmed (bottom of the form)");
+    assert.equal(uploadsSummary(items, "photo", false), "3 of 20 added · 1 uploaded · 1 didn’t upload · the rest upload once you're signed in (bottom of the form)");
     assert.equal(uploadsSummary(items, "cp575", true), "1 uploaded");
     assert.equal(uploadsSummary([], "photo", true), "");
   });

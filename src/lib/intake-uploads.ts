@@ -202,6 +202,6 @@ export function uploadsSummary(items: UploadItem[], kind: UploadKind, signedIn: 
   if (kind === "photo") parts.push(`${mine.length} of ${MAX_PHOTOS} added`);
   if (done) parts.push(`${done} uploaded`);
   if (failed) parts.push(`${failed} didn’t upload`);
-  if (!signedIn && done < mine.length - failed) parts.push("the rest upload once your email is confirmed (bottom of the form)");
+  if (!signedIn && done < mine.length - failed) parts.push("the rest upload once you're signed in (bottom of the form)");
   return parts.join(" · ");
 }
