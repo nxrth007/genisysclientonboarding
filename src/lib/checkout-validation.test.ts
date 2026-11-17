@@ -17,7 +17,7 @@ function answering(plan: Record<string, () => Response | Promise<Response>>) {
     assert.equal(options?.method, "POST");
     assert.equal(new Headers(options?.headers).get("Content-Type"), "application/json");
     assert.equal(options?.redirect, "error");
-    assert.equal(options?.cache, "no-store");
+    assert.equal(options?.cache, undefined, "no cache option: Cloudflare's fetch refuses it");
     const answer = plan[u];
     if (!answer) throw new Error(`unexpected verifier ${u}`);
     return answer();
@@ -91,7 +91,10 @@ describe("Checkout safeguards", () => {
     assert.deepEqual(trail, ["hub:503", "signup:403"]);
     const okTrail: string[] = [];
     await verifyCheckout("cs_live_Example", answering({ [HUB]: () => { throw new Error("private-transport-detail"); }, [SIGNUP]: () => Response.json(verified) }).fetcher, okTrail);
-    assert.deepEqual(okTrail, ["hub:unreachable", "signup:ok"]);
+    assert.deepEqual(okTrail, ["hub:unreachable(Error: private-transport-detail)", "signup:ok"]);
+    const noisy: string[] = [];
+    await assert.rejects(verifyCheckout("cs_live_Example", answering({ [HUB]: () => { throw new TypeError("fetch failed https://secret.example/x?key=1 and   more"); }, [SIGNUP]: () => { throw new Error("x"); } }).fetcher, noisy));
+    assert.equal(noisy[0], "hub:unreachable(TypeError: fetch failed <url> and more)");
   });
   it("does not contact anyone when no verifier key is set here", async () => {
     for (const k of KEYS) delete process.env[k];

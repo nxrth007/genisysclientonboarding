@@ -33,6 +33,12 @@ export function configuredVerifiers(): string[] {
   return verifiersFor({ sessionId: "cs_live_check" }).filter((v) => !!process.env[v.keyEnv]).map((v) => v.name);
 }
 
+/** An error's kind and first words for the trail: no addresses, no keys. */
+function errorLabel(err: unknown): string {
+  const text = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+  return text.replace(/https?:\/\/\S+/g, "<url>").replace(/\s+/g, " ").slice(0, 90);
+}
+
 /**
  * `trail`, when given, collects how each verifier went ("hub:403", "signup:ok",
  * "hub:timeout"): names and statuses only, never keys or provider text.
@@ -52,12 +58,12 @@ async function ask(q: Question, fetcher: typeof fetch, trail: string[] = []): Pr
         method: "POST",
         headers: { "Content-Type": "application/json", "x-onboarding-key": key },
         body: JSON.stringify("sessionId" in q ? { session_id: q.sessionId } : { email: q.email }),
+        // No `cache` option: the published server runs on Cloudflare, whose fetch refuses it outright.
         signal: AbortSignal.timeout(10000),
         redirect: "error",
-        cache: "no-store",
       });
     } catch (err) {
-      trail.push(`${v.name}:${err instanceof Error && /timeout/i.test(err.name) ? "timeout" : "unreachable"}`);
+      trail.push(`${v.name}:${err instanceof Error && /timeout/i.test(err.name) ? "timeout" : `unreachable(${errorLabel(err)})`}`);
       continue; // the next verifier may answer
     }
     if (response.ok) {

@@ -33,7 +33,7 @@ export async function authorizeCustomer(userId: string, sessionId: string) {
   if (!key || !connectionKey) throw new Error("We couldn't check your account. Please contact the Lead Genisys team.");
   const response = await fetch("https://connector-gateway.lovable.dev/google_sheets/v4/spreadsheets/1-xDJVi6HpntUJUWrZWi6rPTmDamyHytKi_aLttL-UU4/values/Sheet1!C2:C", {
     headers: { Authorization: `Bearer ${key}`, "X-Connection-Api-Key": connectionKey },
-    signal: AbortSignal.timeout(15000), cache: "no-store",
+    signal: AbortSignal.timeout(15000), // no `cache` option: Cloudflare's fetch refuses it
   });
   if (!response.ok) {
     console.error(`Customer tracker lookup failed [${response.status}]: ${await response.text()}`);
