@@ -5,7 +5,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowBigDown, ArrowRight, ExternalLink, Info } from "lucide-react";
 
 import AddressAutocomplete from "@/components/AddressAutocomplete";
-import ClickwrapConsent from "@/components/ClickwrapConsent";
 import { FileUploads, useIntakeUploads } from "@/components/FileUploads";
 import PhoneInput from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,6 @@ import {
   type IntakeField,
 } from "@/lib/intake-fields";
 import { ensureDeviceId } from "@/lib/device-id";
-import { allAccepted, EMPTY_ACCEPTANCE, type AcceptanceFlags } from "@/lib/policies";
 import { submitIntake } from "@/lib/intake.functions";
 import { intakeSchema } from "@/lib/intake-validation";
 import { claimAccess } from "@/lib/checkout.functions";
@@ -88,8 +86,6 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
   const withUploads = (a: Record<string, string>, uid: string) => (uid ? { ...a, uploadedFiles: uploadsDraftValue(uid) } : a);
   const [confirming, setConfirming] = useState(false);
   const [sendingLink, setSendingLink] = useState(false);
-  const [accepted, setAccepted] = useState<AcceptanceFlags>(EMPTY_ACCEPTANCE);
-  const [acceptanceError, setAcceptanceError] = useState("");
   const [identityMessage, setIdentityMessage] = useState("");
   const [checkoutMessage, setCheckoutMessage] = useState("");
   // Which verifiers the server could ask (names only), for the team's eyes in the page's markup.
@@ -290,24 +286,10 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
       requestAnimationFrame(() => jumpTo("marketingContent"));
       return;
     }
-    if (!allAccepted(accepted)) {
-      setAcceptanceError(
-        "Check each agreement. The boxes start unchecked, and each policy has to be accepted before you can submit.",
-      );
-      requestAnimationFrame(() =>
-        document.getElementById("clickwrap")?.scrollIntoView({ behavior: "smooth", block: "center" }),
-      );
-    } else {
-      setAcceptanceError("");
-    }
     if (!verifiedEmail) {
       setStatus("idle");
       setIdentityMessage("Please sign in below with the email you signed up with, then press Submit. You don't need to purchase again.");
       setAccountEmail((prev) => prev || answers["leadEmail"] || "");
-      return;
-    }
-    if (!allAccepted(accepted)) {
-      setStatus("error");
       return;
     }
     setStatus("saving");
@@ -322,12 +304,6 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
           answers: parsed.data.answers,
           filePaths,
           sessionId,
-          acceptance: {
-            terms: true,
-            refundPolicy: true,
-            cancellationPolicy: true,
-            recurringBilling: true,
-          },
           ...(deviceId ? { deviceId } : {}),
         },
       });
@@ -603,15 +579,6 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
         {identityMessage ? <p className="text-sm text-muted-foreground" role="status">{identityMessage}</p> : null}
         <Button asChild variant="link" className="px-0"><a href="mailto:alex@leadgenisys.com">Need help? Contact Lead Genisys</a></Button>
       </div>
-
-      <ClickwrapConsent
-        value={accepted}
-        onChange={(next) => {
-          setAccepted(next);
-          if (allAccepted(next)) setAcceptanceError("");
-        }}
-        error={acceptanceError}
-      />
 
       <div className="flex justify-center">
         <Button

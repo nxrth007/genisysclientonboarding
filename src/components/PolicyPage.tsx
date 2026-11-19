@@ -12,8 +12,7 @@ export default function PolicyPage({ policyKey }: { policyKey: PolicyKey }) {
         <p className="text-sm text-primary">Lead Genisys</p>
         <h1 className="mt-2 text-3xl font-medium tracking-tight text-ink">{policy.title}</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Version {policy.version}. The box below is the exact policy text your acceptance record
-          hashes.
+          Version {policy.version}.
           {policy.draft
             ? " This page is a draft and needs the owner's legal review before it is treated as final."
             : " This is the Terms of Service published for Lead Genisys sign-up, last updated August 6, 2026."}

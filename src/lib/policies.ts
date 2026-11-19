@@ -1,5 +1,6 @@
 /**
- * Policy text the client is shown, and that the acceptance record hashes.
+ * Policy text for the standalone policy routes. The intake form does not
+ * link to these pages and does not collect acceptance.
  *
  * Terms are the plain text of the Terms of Service published on the Lead
  * Genisys signup site (nxrth007/freesysystems, src/pages/TermsOfService.tsx,
@@ -13,8 +14,6 @@
  * TRIAL_DAYS = 30, TRIAL_PRICE_ID commented "$297/mo"). This file does not
  * add a different price.
  */
-
-export const POLICY_ORIGIN = "https://clientonboarding.leadgenisys.com";
 
 /** Signup checkout: "Due today $0.00" and "Then $297/mo after your 30-day trial". */
 export const BILLING_SUMMARY = "$0 due today on the 30-day free trial, then $297 per month.";
@@ -206,14 +205,10 @@ export type PolicyKey = (typeof POLICY_KEYS)[number];
 export type PolicyDocument = {
   key: PolicyKey;
   title: string;
-  /** Visible link text on the acceptance checkbox. */
-  linkLabel: string;
-  /** Sentence before the link. */
-  consentLead: string;
   path: string;
   version: string;
   draft: boolean;
-  /** Exact characters shown in the policy box and hashed. */
+  /** Exact characters shown on the policy page. */
   text: string;
 };
 
@@ -221,8 +216,6 @@ export const POLICIES: Record<PolicyKey, PolicyDocument> = {
   terms: {
     key: "terms",
     title: "Terms of Service",
-    linkLabel: "Terms of Service",
-    consentLead: "I agree to the",
     path: "/terms",
     version: PUBLISHED_TERMS_VERSION,
     draft: false,
@@ -231,8 +224,6 @@ export const POLICIES: Record<PolicyKey, PolicyDocument> = {
   refundPolicy: {
     key: "refundPolicy",
     title: "Refund Policy",
-    linkLabel: "Refund Policy",
-    consentLead: "I agree to the",
     path: "/refund-policy",
     version: DRAFT_POLICY_VERSION,
     draft: true,
@@ -241,8 +232,6 @@ export const POLICIES: Record<PolicyKey, PolicyDocument> = {
   cancellationPolicy: {
     key: "cancellationPolicy",
     title: "Cancellation Policy",
-    linkLabel: "Cancellation Policy",
-    consentLead: "I agree to the",
     path: "/cancellation-policy",
     version: DRAFT_POLICY_VERSION,
     draft: true,
@@ -251,29 +240,9 @@ export const POLICIES: Record<PolicyKey, PolicyDocument> = {
   recurringBilling: {
     key: "recurringBilling",
     title: "Recurring Billing",
-    linkLabel: "Recurring Billing disclosure",
-    consentLead: "I agree to the recurring charge described in the",
     path: "/recurring-billing",
     version: DRAFT_POLICY_VERSION,
     draft: true,
     text: RECURRING_BILLING_TEXT,
   },
 };
-
-export function policyUrl(policy: PolicyDocument): string {
-  return `${POLICY_ORIGIN}${policy.path}`;
-}
-
-export type AcceptanceFlags = Record<PolicyKey, boolean>;
-
-/** Every box starts unchecked. Nothing in storage may turn one on. */
-export const EMPTY_ACCEPTANCE: AcceptanceFlags = {
-  terms: false,
-  refundPolicy: false,
-  cancellationPolicy: false,
-  recurringBilling: false,
-};
-
-export function allAccepted(flags: AcceptanceFlags): boolean {
-  return POLICY_KEYS.every((key) => flags[key] === true);
-}

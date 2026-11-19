@@ -6,7 +6,7 @@ import { INTAKE_FIELDS } from "./intake-fields";
 import { intakeSchema } from "./intake-validation";
 import { optionalCheckoutSessionSchema } from "./customer.functions";
 import { submitCheckoutIntake } from "./checkout-submission.server";
-import { acceptanceFlagsSchema, buildPurchaseContext, parseDeviceId } from "./purchase-context.server";
+import { buildPurchaseContext, parseDeviceId } from "./purchase-context.server";
 
 export const submitIntake = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -25,15 +25,10 @@ export const submitIntake = createServerFn({ method: "POST" })
     const raw = data as Record<string, unknown>;
     const sessionId = optionalCheckoutSessionSchema.safeParse(raw["sessionId"] ?? "");
     if (!sessionId.success) throw new Error("We couldn't confirm this checkout link. Please contact the Lead Genisys team.");
-    // Checkboxes only. IP, user agent, hashes, and timestamps are filled on the server.
-    const acceptance = acceptanceFlagsSchema.safeParse(raw["acceptance"]);
-    if (!acceptance.success) {
-      throw new Error(
-        "Please accept the Terms of Service, Refund Policy, Cancellation Policy, and recurring billing terms before submitting.",
-      );
-    }
+    // IP and user agent come from the request. Any client acceptance object is ignored:
+    // the form does not collect consent, so the webhook must not record that it was accepted.
     const deviceId = parseDeviceId(raw["deviceId"]);
-    return { ...parsed.data, sessionId: sessionId.data, acceptance: acceptance.data, ...(deviceId ? { deviceId } : {}) };
+    return { ...parsed.data, sessionId: sessionId.data, ...(deviceId ? { deviceId } : {}) };
   })
   .handler(async ({ data, context }) => {
     setResponseHeader("Cache-Control", "no-store");
@@ -41,7 +36,6 @@ export const submitIntake = createServerFn({ method: "POST" })
     const purchaseContext = buildPurchaseContext({
       headers: request?.headers ?? new Headers(),
       deviceId: data.deviceId,
-      at: new Date().toISOString(),
     });
     return submitCheckoutIntake({ ...data, purchaseContext }, context.userId);
   });
