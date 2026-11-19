@@ -1,4 +1,5 @@
 import { FILE_FIELD_LABEL, INTAKE_FIELDS } from "./intake-fields";
+import type { IntakePurchaseContext } from "./purchase-context.server";
 
 export type IntakeWebhookPayload = {
   event: "intake.submitted";
@@ -7,12 +8,17 @@ export type IntakeWebhookPayload = {
   answers: Record<string, string>;
   labels: Record<string, string>;
   files: string[];
+  ip?: string;
+  userAgent?: string;
+  purchase?: IntakePurchaseContext["purchase"];
+  acceptance?: IntakePurchaseContext["acceptance"];
 };
 
 export function buildIntakeWebhookPayload(
   answers: Record<string, string>,
   fileUrls: string[],
   submittedAt: string,
+  purchaseContext?: IntakePurchaseContext,
 ): IntakeWebhookPayload {
   const labels: Record<string, string> = {};
   for (const field of INTAKE_FIELDS) {
@@ -29,6 +35,14 @@ export function buildIntakeWebhookPayload(
     ),
     labels,
     files: fileUrls,
+    ...(purchaseContext
+      ? {
+          ip: purchaseContext.ip,
+          userAgent: purchaseContext.userAgent,
+          purchase: purchaseContext.purchase,
+          acceptance: purchaseContext.acceptance,
+        }
+      : {}),
   };
 }
 

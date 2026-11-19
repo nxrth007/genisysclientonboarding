@@ -2,8 +2,12 @@ import { bindCheckoutEmail } from "./checkout-validation";
 import { authorizeCustomer } from "./customer-access.server";
 import { recordIntakeSubmission } from "./intake.server";
 import type { IntakeInput } from "./intake-validation";
+import type { IntakePurchaseContext } from "./purchase-context.server";
 
-export async function submitCheckoutIntake(input: IntakeInput & { sessionId: string }, userId: string) {
+export async function submitCheckoutIntake(
+  input: IntakeInput & { sessionId: string; purchaseContext: IntakePurchaseContext },
+  userId: string,
+) {
   // Re-read Stripe and confirmed identity on every submission, before any side effects.
   const checkout = await authorizeCustomer(userId, input.sessionId, { fresh: true });
   const answers = bindCheckoutEmail(input.answers, checkout.email);
@@ -23,7 +27,11 @@ export async function submitCheckoutIntake(input: IntakeInput & { sessionId: str
   if (error?.code === "23505") throw new Error("Your onboarding has already been received. Contact the Lead Genisys team if you need to update it.");
   if (error) throw new Error("We couldn't save your onboarding. Please try again later.");
   try {
-    await recordIntakeSubmission({ answers, filePaths: input.filePaths });
+    await recordIntakeSubmission({
+      answers,
+      filePaths: input.filePaths,
+      purchaseContext: input.purchaseContext,
+    });
     const { error: updateError } = await supabaseAdmin.from("checkout_onboarding_submissions")
       .update({ status: "complete", completed_at: new Date().toISOString() }).eq("customer_email", checkout.email);
     if (updateError) console.error("Could not mark checkout onboarding complete");

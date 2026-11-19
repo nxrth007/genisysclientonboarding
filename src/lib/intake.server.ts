@@ -1,5 +1,6 @@
 import { FIELDS_AFTER_FILES, FIELDS_BEFORE_FILES, SHEET_HEADERS } from "./intake-fields";
 import { buildIntakeWebhookPayload, sendIntakeWebhooks } from "./intake-webhook.server";
+import type { IntakePurchaseContext } from "./purchase-context.server";
 import { onboardToSlack } from "./slack.server";
 
 const SPREADSHEET_ID = "1NGkkUtVM0tf1J8G8ibCLQ0LIB9RK_EtnXgipHizYCIs";
@@ -10,6 +11,8 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 365 * 5;
 export type IntakeSubmission = {
   answers: Record<string, string>;
   filePaths: string[];
+  /** Clickwrap and purchase context for the Hub webhook. Not written to the sheet. */
+  purchaseContext?: IntakePurchaseContext;
 };
 
 function gatewayHeaders() {
@@ -70,11 +73,11 @@ async function signFiles(filePaths: string[]): Promise<string[]> {
   return urls;
 }
 
-export async function recordIntakeSubmission({ answers, filePaths }: IntakeSubmission) {
+export async function recordIntakeSubmission({ answers, filePaths, purchaseContext }: IntakeSubmission) {
   await ensureHeaderRow();
   const submittedAt = new Date().toISOString();
   const fileUrls = await signFiles(filePaths);
-  const payload = buildIntakeWebhookPayload(answers, fileUrls, submittedAt);
+  const payload = buildIntakeWebhookPayload(answers, fileUrls, submittedAt, purchaseContext);
   const row = [
     submittedAt,
     ...FIELDS_BEFORE_FILES.map((field) => answers[field.id] ?? ""),
