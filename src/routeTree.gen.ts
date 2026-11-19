@@ -10,8 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CancellationPolicyRouteImport } from './routes/cancellation-policy'
 import { Route as DnsAccessRouteImport } from './routes/dns-access'
+import { Route as RecurringBillingRouteImport } from './routes/recurring-billing'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as Step2RouteImport } from './routes/step-2'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiPublicIntakeWebhookRouteImport } from './routes/api/public/intake-webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -19,14 +23,34 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CancellationPolicyRoute = CancellationPolicyRouteImport.update({
+  id: '/cancellation-policy',
+  path: '/cancellation-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DnsAccessRoute = DnsAccessRouteImport.update({
   id: '/dns-access',
   path: '/dns-access',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecurringBillingRoute = RecurringBillingRouteImport.update({
+  id: '/recurring-billing',
+  path: '/recurring-billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Step2Route = Step2RouteImport.update({
   id: '/step-2',
   path: '/step-2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicIntakeWebhookRoute = ApiPublicIntakeWebhookRouteImport.update({
@@ -37,36 +61,76 @@ const ApiPublicIntakeWebhookRoute = ApiPublicIntakeWebhookRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cancellation-policy': typeof CancellationPolicyRoute
   '/dns-access': typeof DnsAccessRoute
+  '/recurring-billing': typeof RecurringBillingRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/step-2': typeof Step2Route
+  '/terms': typeof TermsRoute
   '/api/public/intake-webhook': typeof ApiPublicIntakeWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cancellation-policy': typeof CancellationPolicyRoute
   '/dns-access': typeof DnsAccessRoute
+  '/recurring-billing': typeof RecurringBillingRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/step-2': typeof Step2Route
+  '/terms': typeof TermsRoute
   '/api/public/intake-webhook': typeof ApiPublicIntakeWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cancellation-policy': typeof CancellationPolicyRoute
   '/dns-access': typeof DnsAccessRoute
+  '/recurring-billing': typeof RecurringBillingRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/step-2': typeof Step2Route
+  '/terms': typeof TermsRoute
   '/api/public/intake-webhook': typeof ApiPublicIntakeWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dns-access' | '/step-2' | '/api/public/intake-webhook'
+  fullPaths:
+    | '/'
+    | '/cancellation-policy'
+    | '/dns-access'
+    | '/recurring-billing'
+    | '/refund-policy'
+    | '/step-2'
+    | '/terms'
+    | '/api/public/intake-webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dns-access' | '/step-2' | '/api/public/intake-webhook'
+  to:
+    | '/'
+    | '/cancellation-policy'
+    | '/dns-access'
+    | '/recurring-billing'
+    | '/refund-policy'
+    | '/step-2'
+    | '/terms'
+    | '/api/public/intake-webhook'
   id:
-    '__root__' | '/' | '/dns-access' | '/step-2' | '/api/public/intake-webhook'
+    | '__root__'
+    | '/'
+    | '/cancellation-policy'
+    | '/dns-access'
+    | '/recurring-billing'
+    | '/refund-policy'
+    | '/step-2'
+    | '/terms'
+    | '/api/public/intake-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CancellationPolicyRoute: typeof CancellationPolicyRoute
   DnsAccessRoute: typeof DnsAccessRoute
+  RecurringBillingRoute: typeof RecurringBillingRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
   Step2Route: typeof Step2Route
+  TermsRoute: typeof TermsRoute
   ApiPublicIntakeWebhookRoute: typeof ApiPublicIntakeWebhookRoute
 }
 
@@ -79,6 +143,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cancellation-policy': {
+      id: '/cancellation-policy'
+      path: '/cancellation-policy'
+      fullPath: '/cancellation-policy'
+      preLoaderRoute: typeof CancellationPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dns-access': {
       id: '/dns-access'
       path: '/dns-access'
@@ -86,11 +157,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DnsAccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recurring-billing': {
+      id: '/recurring-billing'
+      path: '/recurring-billing'
+      fullPath: '/recurring-billing'
+      preLoaderRoute: typeof RecurringBillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/step-2': {
       id: '/step-2'
       path: '/step-2'
       fullPath: '/step-2'
       preLoaderRoute: typeof Step2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/intake-webhook': {
@@ -105,8 +197,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CancellationPolicyRoute: CancellationPolicyRoute,
   DnsAccessRoute: DnsAccessRoute,
+  RecurringBillingRoute: RecurringBillingRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   Step2Route: Step2Route,
+  TermsRoute: TermsRoute,
   ApiPublicIntakeWebhookRoute: ApiPublicIntakeWebhookRoute,
 }
 export const routeTree = rootRouteImport
