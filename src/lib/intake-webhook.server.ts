@@ -11,7 +11,6 @@ export type IntakeWebhookPayload = {
   ip?: string;
   userAgent?: string;
   purchase?: IntakePurchaseContext["purchase"];
-  acceptance?: IntakePurchaseContext["acceptance"];
 };
 
 export function buildIntakeWebhookPayload(
@@ -26,24 +25,30 @@ export function buildIntakeWebhookPayload(
   }
   labels[FILE_FIELD_LABEL] = fileUrls.join("\n");
 
-  return {
+  const payload: IntakeWebhookPayload = {
     event: "intake.submitted",
     submittedAt,
     source: "client-onboarding-funnel",
-    answers: Object.fromEntries(
-      INTAKE_FIELDS.map((field) => [field.id, answers[field.id] ?? ""]),
-    ),
+    answers: Object.fromEntries(INTAKE_FIELDS.map((field) => [field.id, answers[field.id] ?? ""])),
     labels,
     files: fileUrls,
-    ...(purchaseContext
-      ? {
-          ip: purchaseContext.ip,
-          userAgent: purchaseContext.userAgent,
-          purchase: purchaseContext.purchase,
-          acceptance: purchaseContext.acceptance,
-        }
-      : {}),
   };
+  if (purchaseContext) {
+    payload.ip = purchaseContext.ip;
+    payload.userAgent = purchaseContext.userAgent;
+    payload.purchase = purchaseContext.purchase;
+  }
+  return payload;
+}
+
+/**
+ * The form does not collect consent. Drop an acceptance object if one was
+ * ever attached, so the Hub is never told the policies were accepted.
+ */
+export function webhookBody(payload: IntakeWebhookPayload): string {
+  const record = { ...payload } as Record<string, unknown>;
+  delete record["acceptance"];
+  return JSON.stringify(record);
 }
 
 /**
@@ -62,13 +67,14 @@ export async function sendIntakeWebhooks(payload: IntakeWebhookPayload) {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (secret) headers["X-Webhook-Secret"] = secret;
 
+  const body = webhookBody(payload);
   await Promise.all(
     urls.map(async (url) => {
       try {
         const res = await fetch(url, {
           method: "POST",
           headers,
-          body: JSON.stringify(payload),
+          body,
         });
         if (!res.ok) {
           console.error(`Intake webhook to ${url} failed [${res.status}]`);

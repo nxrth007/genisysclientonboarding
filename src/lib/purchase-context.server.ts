@@ -1,33 +1,7 @@
-import { createHash } from "node:crypto";
-
-import { z } from "zod";
-
 import { isDeviceId } from "./device-id";
-import { POLICIES, POLICY_KEYS, policyUrl, type PolicyKey } from "./policies";
 
 /** Real browser user agents fit. A longer header is cut so a forged header cannot bloat the record. */
 export const USER_AGENT_LIMIT = 2000;
-
-export const acceptanceFlagsSchema = z
-  .object({
-    terms: z.literal(true),
-    refundPolicy: z.literal(true),
-    cancellationPolicy: z.literal(true),
-    recurringBilling: z.literal(true),
-  })
-  .strip();
-
-export type AcceptanceFlags = z.infer<typeof acceptanceFlagsSchema>;
-
-export type AcceptanceRecord = {
-  accepted: true;
-  version: string;
-  at: string;
-  ip: string;
-  userAgent: string;
-  textHash: string;
-  textUrl: string;
-};
 
 export type PurchaseRecord = {
   ip: string;
@@ -35,17 +9,15 @@ export type PurchaseRecord = {
   deviceId?: string;
 };
 
+/**
+ * Server-captured request context for the Hub webhook.
+ * There is no acceptance record: the form does not show or collect consent.
+ */
 export type IntakePurchaseContext = {
   ip: string;
   userAgent: string;
   purchase: PurchaseRecord;
-  acceptance: Record<PolicyKey, AcceptanceRecord>;
 };
-
-/** Lowercase hex SHA-256 of the exact policy text shown on the page. */
-export function textHash(text: string): string {
-  return createHash("sha256").update(text, "utf8").digest("hex");
-}
 
 function isIpv4(value: string): boolean {
   const parts = value.split(".");
@@ -84,30 +56,14 @@ export function parseDeviceId(value: unknown): string | undefined {
   return isDeviceId(value) ? value : undefined;
 }
 
-/** Builds the Hub contract from the request. Caller has already required every checkbox. */
+/** Builds the Hub purchase context from the request. Consent is not part of it. */
 export function buildPurchaseContext(input: {
   headers: Headers;
   deviceId: unknown;
-  at: string;
 }): IntakePurchaseContext {
   const ip = clientIpFromHeaders(input.headers);
   const userAgent = userAgentFromHeaders(input.headers);
   const deviceId = parseDeviceId(input.deviceId);
   const purchase: PurchaseRecord = deviceId ? { ip, userAgent, deviceId } : { ip, userAgent };
-  const acceptance = Object.fromEntries(
-    POLICY_KEYS.map((key) => {
-      const policy = POLICIES[key];
-      const record: AcceptanceRecord = {
-        accepted: true,
-        version: policy.version,
-        at: input.at,
-        ip,
-        userAgent,
-        textHash: textHash(policy.text),
-        textUrl: policyUrl(policy),
-      };
-      return [key, record];
-    }),
-  ) as Record<PolicyKey, AcceptanceRecord>;
-  return { ip, userAgent, purchase, acceptance };
+  return { ip, userAgent, purchase };
 }

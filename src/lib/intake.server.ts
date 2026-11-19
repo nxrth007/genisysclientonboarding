@@ -11,7 +11,7 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 365 * 5;
 export type IntakeSubmission = {
   answers: Record<string, string>;
   filePaths: string[];
-  /** Clickwrap and purchase context for the Hub webhook. Not written to the sheet. */
+  /** Purchase context for the Hub webhook. Not written to the sheet, and never an acceptance record. */
   purchaseContext?: IntakePurchaseContext;
 };
 
