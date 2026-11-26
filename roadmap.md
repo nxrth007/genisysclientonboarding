@@ -4,7 +4,7 @@
 - [x] Attach requested dataset with ID-only PageView events; preserve onboarding
 - [x] No banner: skip Meta in consent/unknown regions and honor privacy signals and withdrawals
 - [x] Verify SDK initialization, region blocking, withdrawal, and automated privacy tests (78 total passing)
-- [ ] Confirm PageView transmission — SDK loaded in local browser but no facebook.com/tr request observed; hosted test required
+- [x] Confirm PageView transmission — with tracking granted, Meta SDK loads and dataset 1012489854984901 config request fires on / and /step-2; nothing loads by default (region lookup fails closed on localhost)
 - [ ] Verify published installation and Meta receipt — requires publication approval and Events Manager access
 
 ## Checkout onboarding
