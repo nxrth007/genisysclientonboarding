@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CancellationPolicyRouteImport } from './routes/cancellation-policy'
 import { Route as DnsAccessRouteImport } from './routes/dns-access'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RecurringBillingRouteImport } from './routes/recurring-billing'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as Step2RouteImport } from './routes/step-2'
@@ -31,6 +32,11 @@ const CancellationPolicyRoute = CancellationPolicyRouteImport.update({
 const DnsAccessRoute = DnsAccessRouteImport.update({
   id: '/dns-access',
   path: '/dns-access',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecurringBillingRoute = RecurringBillingRouteImport.update({
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cancellation-policy': typeof CancellationPolicyRoute
   '/dns-access': typeof DnsAccessRoute
+  '/privacy': typeof PrivacyRoute
   '/recurring-billing': typeof RecurringBillingRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/step-2': typeof Step2Route
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cancellation-policy': typeof CancellationPolicyRoute
   '/dns-access': typeof DnsAccessRoute
+  '/privacy': typeof PrivacyRoute
   '/recurring-billing': typeof RecurringBillingRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/step-2': typeof Step2Route
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cancellation-policy': typeof CancellationPolicyRoute
   '/dns-access': typeof DnsAccessRoute
+  '/privacy': typeof PrivacyRoute
   '/recurring-billing': typeof RecurringBillingRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/step-2': typeof Step2Route
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cancellation-policy'
     | '/dns-access'
+    | '/privacy'
     | '/recurring-billing'
     | '/refund-policy'
     | '/step-2'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cancellation-policy'
     | '/dns-access'
+    | '/privacy'
     | '/recurring-billing'
     | '/refund-policy'
     | '/step-2'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cancellation-policy'
     | '/dns-access'
+    | '/privacy'
     | '/recurring-billing'
     | '/refund-policy'
     | '/step-2'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CancellationPolicyRoute: typeof CancellationPolicyRoute
   DnsAccessRoute: typeof DnsAccessRoute
+  PrivacyRoute: typeof PrivacyRoute
   RecurringBillingRoute: typeof RecurringBillingRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
   Step2Route: typeof Step2Route
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/dns-access'
       fullPath: '/dns-access'
       preLoaderRoute: typeof DnsAccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recurring-billing': {
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CancellationPolicyRoute: CancellationPolicyRoute,
   DnsAccessRoute: DnsAccessRoute,
+  PrivacyRoute: PrivacyRoute,
   RecurringBillingRoute: RecurringBillingRoute,
   RefundPolicyRoute: RefundPolicyRoute,
   Step2Route: Step2Route,

@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
+import MetaPixel from "@/components/MetaPixel";
 
 function NotFoundComponent() {
   return (
@@ -132,8 +133,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <MetaPixel />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <footer className="px-4 py-6 text-center text-sm text-muted-foreground">
+        <Link to="/privacy" className="underline underline-offset-2">Privacy & tracking choices</Link>
+      </footer>
     </QueryClientProvider>
   );
 }

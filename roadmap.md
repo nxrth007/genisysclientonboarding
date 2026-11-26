@@ -1,5 +1,12 @@
 # Task Roadmap
 
+## Meta Pixel
+- [x] Attach requested dataset with ID-only PageView events; preserve onboarding
+- [x] No banner: skip Meta in consent/unknown regions and honor privacy signals and withdrawals
+- [x] Verify SDK initialization, region blocking, withdrawal, and automated privacy tests (78 total passing)
+- [ ] Confirm PageView transmission — SDK loaded in local browser but no facebook.com/tr request observed; hosted test required
+- [ ] Verify published installation and Meta receipt — requires publication approval and Events Manager access
+
 ## Checkout onboarding
 - [x] Add server-only shared-key verification; live missing/wrong keys return 401 and saved key passes auth to invalid-session rejection
 - [ ] Confirm successful real sandbox verification; requires a completed sandbox Checkout Session ID
