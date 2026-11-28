@@ -515,7 +515,7 @@ export default function IntakeForm({ sessionId }: { sessionId: string }) {
         inputId="marketingContent"
         label={FILE_FIELD_LABEL}
         description="Up to 20 files: your logo, photos of finished jobs, your crew, trucks and equipment. Photos are shrunk before they upload, so this is quick even from a phone."
-        hint="Add them in as many goes as you like. On a phone, pick several at once from your photo library."
+        hint="We recommend uploading at least six photos of your work so we can showcase it on your website."
         accept="image/*,.heic,.heif,.pdf,.svg"
         signedIn={!!verifiedEmail}
       />
